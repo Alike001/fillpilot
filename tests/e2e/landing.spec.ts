@@ -3,6 +3,12 @@ import { expect, test } from "@playwright/test";
 test("explains FillPilot without claiming a fake execution", async ({
   page,
 }) => {
+  const runtimeErrors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") runtimeErrors.push(message.text());
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(error.message));
+
   await page.goto("/");
 
   await expect(
@@ -27,4 +33,5 @@ test("explains FillPilot without claiming a fake execution", async ({
   await expect(
     page.getByText(/KeeperHub execution is deliberately disabled/i),
   ).toBeVisible();
+  expect(runtimeErrors).toEqual([]);
 });
