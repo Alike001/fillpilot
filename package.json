@@ -1,0 +1,74 @@
+{
+  "name": "fillpilot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.33.1",
+  "engines": {
+    "node": ">=24.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "postcss": "8.5.23",
+      "sharp": "0.35.3"
+    }
+  },
+  "scripts": {
+    "dev": "next dev",
+    "dev:worker": "node --import tsx --watch src/worker/index.ts",
+    "build": "pnpm build:web && pnpm build:worker",
+    "build:web": "next build",
+    "build:worker": "tsup src/worker/index.ts --format esm --platform node --target node24 --out-dir dist/worker --clean",
+    "start": "next start",
+    "start:worker": "node dist/worker/index.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "next typegen && tsc --noEmit",
+    "test:unit": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "test:fork": "vitest run --project fork",
+    "test:e2e": "playwright test",
+    "test:coverage": "vitest run --coverage --project unit --project integration",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "node --import tsx src/server/db/migrate.ts",
+    "db:check": "drizzle-kit check",
+    "secret:scan": "node scripts/check-secrets.mjs",
+    "size:check": "node scripts/check-file-sizes.mjs",
+    "commitlint": "commitlint --edit",
+    "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm secret:scan && pnpm size:check && pnpm test:unit && pnpm test:integration && pnpm db:check && pnpm build && pnpm test:e2e"
+  },
+  "dependencies": {
+    "@cowprotocol/sdk-config": "^2.4.0",
+    "@cowprotocol/sdk-order-book": "^4.0.2",
+    "@cowprotocol/sdk-order-signing": "^1.1.6",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.2",
+    "next": "16.2.12",
+    "postgres": "^3.4.9",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "sharp": "0.35.3",
+    "viem": "^2.55.10",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.1",
+    "@commitlint/config-conventional": "^21.2.0",
+    "@playwright/test": "^1.62.1",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^4.1.10",
+    "drizzle-kit": "^0.31.10",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.12",
+    "prettier": "^3.9.6",
+    "tsup": "^8.5.1",
+    "tsx": "^4.23.5",
+    "typescript": "^5",
+    "vitest": "^4.1.10"
+  }
+}

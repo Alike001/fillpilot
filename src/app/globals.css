@@ -1,0 +1,71 @@
+:root {
+  --canvas: #f3f5f7;
+  --surface: #ffffff;
+  --ink: #111820;
+  --muted: #59636f;
+  --keyline: #d8dde2;
+  --brand: #e6532f;
+  --brand-dark: #bd3d20;
+  --info: #2457d6;
+  --success: #1b7f5a;
+  --warning: #a45b13;
+  --danger: #b83232;
+  --shadow: 0 18px 60px rgb(17 24 32 / 8%);
+  --sans: "Instrument Sans", "Avenir Next", Avenir, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--canvas);
+  color: var(--ink);
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background:
+    linear-gradient(rgb(17 24 32 / 3%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(17 24 32 / 3%) 1px, transparent 1px),
+    var(--canvas);
+  background-size: 32px 32px;
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--info) 70%, white);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--brand) 24%, white);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

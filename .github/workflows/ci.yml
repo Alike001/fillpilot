@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: fillpilot_ci
+          POSTGRES_PASSWORD: fillpilot
+          POSTGRES_USER: fillpilot
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fillpilot -d fillpilot_ci"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgres://fillpilot:fillpilot@127.0.0.1:5432/fillpilot_ci
+      TEST_DATABASE_URL: postgres://fillpilot:fillpilot@127.0.0.1:5432/fillpilot_ci
+      BASE_FORK_RPC_URL: ${{ secrets.BASE_FORK_RPC_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Migrate empty database
+        run: pnpm db:migrate
+      - name: Verify repository
+        run: pnpm verify
+      - name: Run opt-in Base fork gate
+        run: pnpm test:fork
+      - name: Audit production dependencies
+        run: pnpm audit --prod --audit-level high
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

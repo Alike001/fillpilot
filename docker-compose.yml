@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: fillpilot
+      POSTGRES_PASSWORD: fillpilot
+      POSTGRES_USER: fillpilot
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fillpilot -d fillpilot"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - fillpilot-postgres:/var/lib/postgresql/data
+
+volumes:
+  fillpilot-postgres:
