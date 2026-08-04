@@ -33,5 +33,11 @@ test("explains FillPilot without claiming a fake execution", async ({
   await expect(
     page.getByText(/KeeperHub execution is deliberately disabled/i),
   ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: /Confirm the execution environment/i }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: /Connect KeeperHub/i }),
+  ).toBeVisible();
   expect(runtimeErrors).toEqual([]);
 });

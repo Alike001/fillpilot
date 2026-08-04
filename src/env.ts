@@ -23,6 +23,7 @@ export const serverEnvSchema = z.object({
   DATABASE_URL: optionalUrl,
   TEST_DATABASE_URL: optionalUrl,
   APP_URL: z.url().default("http://127.0.0.1:3000"),
+  KEEPERHUB_MCP_URL: z.url().default("https://app.keeperhub.com/mcp"),
   TOKEN_ENCRYPTION_KEY: optionalEncryptionKey,
 });
 

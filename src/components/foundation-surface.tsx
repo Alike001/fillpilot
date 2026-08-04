@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import { SiteHeader } from "./site-header";
 import styles from "./foundation-surface.module.css";
@@ -8,6 +9,7 @@ type FoundationSurfaceProps = {
   title: string;
   body: string;
   identifier?: string;
+  children?: ReactNode;
 };
 
 export function FoundationSurface({
@@ -15,6 +17,7 @@ export function FoundationSurface({
   title,
   body,
   identifier,
+  children,
 }: FoundationSurfaceProps) {
   return (
     <main>
@@ -38,6 +41,7 @@ export function FoundationSurface({
             </p>
           </div>
         </div>
+        {children}
         <Link className={styles.back} href="/">
           ← Return to product overview
         </Link>
