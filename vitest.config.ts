@@ -36,10 +36,10 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "html", "lcov"],
-      include: ["src/**/*.ts"],
-      exclude: ["src/**/*.test.ts", "src/app/**", "src/worker/**"],
+      include: ["src/domain/**/*.ts", "src/env.ts", "src/lib/routes.ts"],
+      exclude: ["src/**/*.test.ts"],
       thresholds: {
-        branches: 70,
+        branches: 90,
         functions: 80,
         lines: 80,
         statements: 80,
