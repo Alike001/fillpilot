@@ -8,7 +8,10 @@ export default function NewGoalPage() {
       title="Define one fill. Keep every boundary visible."
       body="Before any goal can be set, inspect the connected KeeperHub organization and the Base execution prerequisites."
     >
-      <ConnectionDoctor />
+      <Suspense fallback={null}>
+        <ConnectionDoctor />
+      </Suspense>
     </FoundationSurface>
   );
 }
+import { Suspense } from "react";

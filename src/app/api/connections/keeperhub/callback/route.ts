@@ -48,9 +48,14 @@ export async function GET(request: NextRequest) {
       },
     );
     return response;
-  } catch {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown";
+    const reason =
+      message.includes("state") || message.includes("session")
+        ? "callback-validation"
+        : "token-exchange";
     return NextResponse.redirect(
-      new URL("/app/new?connection=failed", request.url),
+      new URL(`/app/new?connection=failed&reason=${reason}`, request.url),
     );
   }
 }

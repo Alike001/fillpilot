@@ -35,6 +35,14 @@
   color: var(--muted);
   line-height: 1.55;
 }
+.error {
+  border-left: 3px solid var(--danger);
+  color: var(--danger);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  margin: 16px 0;
+  padding-left: 12px;
+}
 .checks {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

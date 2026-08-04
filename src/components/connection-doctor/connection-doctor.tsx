@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 import styles from "./connection-doctor.module.css";
 
@@ -13,6 +14,8 @@ type Check = {
 
 export function ConnectionDoctor() {
   const [checks, setChecks] = useState<Check[] | undefined>();
+  const searchParams = useSearchParams();
+  const connectionFailed = searchParams.get("connection") === "failed";
 
   useEffect(() => {
     void fetch("/api/doctor", { cache: "no-store" })
@@ -41,6 +44,13 @@ export function ConnectionDoctor() {
         FillPilot can inspect KeeperHub, Base, and CoW readiness here. This step
         cannot send a transaction.
       </p>
+      {connectionFailed ? (
+        <p className={styles.error} role="alert">
+          KeeperHub approved the request, but FillPilot could not complete the
+          secure token exchange. Reason:{" "}
+          {searchParams.get("reason") ?? "unknown"}.
+        </p>
+      ) : null}
       <ul className={styles.checks} aria-live="polite">
         {(checks ?? Array.from({ length: 6 })).map((check, index) => (
           <li key={check?.id ?? index} className={styles.check}>
