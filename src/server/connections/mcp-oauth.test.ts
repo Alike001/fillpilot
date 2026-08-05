@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { extractAddress, SessionOAuthProvider } from "./mcp-oauth";
+import {
+  extractAddress,
+  findWeb3IntegrationId,
+  SessionOAuthProvider,
+} from "./mcp-oauth";
 
 describe("MCP OAuth provider", () => {
   it("keeps PKCE and token records in the server-held session state", async () => {
@@ -28,6 +32,27 @@ describe("MCP OAuth provider", () => {
     ).toBe("0x1111111111111111111111111111111111111111");
     expect(
       extractAddress({ content: [{ text: "no wallet" }] }),
+    ).toBeUndefined();
+  });
+
+  it("selects only the web3 integration before reading its wallet details", () => {
+    expect(
+      findWeb3IntegrationId({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              data: [
+                { id: "discord-1", type: "discord" },
+                { id: "wallet-1", type: "web3" },
+              ],
+            }),
+          },
+        ],
+      }),
+    ).toBe("wallet-1");
+    expect(
+      findWeb3IntegrationId({ content: [{ type: "text", text: "{}" }] }),
     ).toBeUndefined();
   });
 });

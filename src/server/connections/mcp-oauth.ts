@@ -140,10 +140,20 @@ export async function finishMcpAuthorization(
   const connectedClient = client();
   await connectedClient.connect(transport(serverUrl, provider));
   const tools = await connectedClient.listTools();
-  if (tools.tools.some((tool) => tool.name === "get_wallet_integration")) {
+  const toolNames = new Set(tools.tools.map((tool) => tool.name));
+  if (
+    toolNames.has("list_integrations") &&
+    toolNames.has("get_wallet_integration")
+  ) {
+    const integrations = await connectedClient.callTool({
+      name: "list_integrations",
+      arguments: {},
+    });
+    const integrationId = findWeb3IntegrationId(integrations);
+    if (!integrationId) return { client: connectedClient, stored };
     const result = await connectedClient.callTool({
       name: "get_wallet_integration",
-      arguments: {},
+      arguments: { integrationId },
     });
     const walletAddress = extractAddress(result);
     if (walletAddress) stored.walletAddress = walletAddress;
@@ -155,6 +165,42 @@ export function extractAddress(value: unknown): `0x${string}` | undefined {
   const serialized = JSON.stringify(value);
   const match = serialized.match(/0x[a-fA-F0-9]{40}/);
   return match?.[0] as `0x${string}` | undefined;
+}
+
+export function findWeb3IntegrationId(value: unknown): string | undefined {
+  const content = extractTextContent(value);
+  if (!content) return undefined;
+
+  try {
+    const parsed: unknown = JSON.parse(content);
+    if (!parsed || typeof parsed !== "object") return undefined;
+    const data = (parsed as { data?: unknown }).data;
+    if (!Array.isArray(data)) return undefined;
+    const wallet = data.find(
+      (item): item is { id: string; type: string } =>
+        typeof item === "object" &&
+        item !== null &&
+        typeof (item as { id?: unknown }).id === "string" &&
+        (item as { type?: unknown }).type === "web3",
+    );
+    return wallet?.id;
+  } catch {
+    return undefined;
+  }
+}
+
+function extractTextContent(value: unknown): string | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const content = (value as { content?: unknown }).content;
+  if (!Array.isArray(content)) return undefined;
+  const text = content.find(
+    (item): item is { type: "text"; text: string } =>
+      typeof item === "object" &&
+      item !== null &&
+      (item as { type?: unknown }).type === "text" &&
+      typeof (item as { text?: unknown }).text === "string",
+  );
+  return text?.text;
 }
 
 export function serializeAuthState(state: ConnectionAuthState): string {
