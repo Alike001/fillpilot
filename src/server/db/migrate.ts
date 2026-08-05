@@ -1,6 +1,9 @@
+import { config } from "dotenv";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 
 import { createDatabase } from "./client";
+
+config({ path: ".env.local", quiet: true });
 
 async function main() {
   const { client, db } = createDatabase();
