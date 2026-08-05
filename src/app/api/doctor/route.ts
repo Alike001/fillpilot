@@ -47,21 +47,31 @@ export async function GET() {
       return response;
     }
 
-    const balances = await readBaseWallet(
-      auth.walletAddress,
-      COW_PROTOCOL_VAULT_RELAYER_ADDRESS[
-        SupportedChainId.BASE
-      ] as `0x${string}`,
-    );
-    const response = NextResponse.json({
-      checks: buildConnectionDoctor({
-        connection: "connected",
-        walletAddress: auth.walletAddress,
-        chainId: 8453,
-        ...balances,
-      }),
-    });
-    return response;
+    try {
+      const balances = await readBaseWallet(
+        auth.walletAddress,
+        COW_PROTOCOL_VAULT_RELAYER_ADDRESS[
+          SupportedChainId.BASE
+        ] as `0x${string}`,
+      );
+      return NextResponse.json({
+        checks: buildConnectionDoctor({
+          connection: "connected",
+          walletAddress: auth.walletAddress,
+          chainId: 8453,
+          ...balances,
+        }),
+      });
+    } catch {
+      return NextResponse.json({
+        checks: buildConnectionDoctor({
+          connection: "connected",
+          walletAddress: auth.walletAddress,
+          chainId: 8453,
+          baseReadUnavailable: true,
+        }),
+      });
+    }
   } catch {
     return NextResponse.json({
       checks: buildConnectionDoctor({ connection: "disconnected" }),

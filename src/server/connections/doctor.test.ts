@@ -52,4 +52,22 @@ describe("connection doctor", () => {
       state: "attention",
     });
   });
+
+  it("keeps the connection visible when a Base read fails", () => {
+    const checks = buildConnectionDoctor({
+      connection: "connected",
+      walletAddress: "0x1111111111111111111111111111111111111111",
+      chainId: 8453,
+      baseReadUnavailable: true,
+    });
+
+    expect(checks.find((check) => check.id === "connection")).toMatchObject({
+      state: "ready",
+    });
+    expect(checks.find((check) => check.id === "gas")).toMatchObject({
+      state: "attention",
+      detail:
+        "Base read is temporarily unavailable. KeeperHub remains connected.",
+    });
+  });
 });

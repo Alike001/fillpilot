@@ -6,6 +6,7 @@ export type DoctorInput = {
   usdcBalance?: bigint;
   allowance?: bigint;
   requiredSellAmount?: bigint;
+  baseReadUnavailable?: boolean;
 };
 
 export type DoctorCheck = {
@@ -61,6 +62,7 @@ export function buildConnectionDoctor(input: DoctorInput): DoctorCheck[] {
       input.nativeGasWei,
       MINIMUM_GAS_WEI,
       canInspect,
+      input.baseReadUnavailable,
     ),
     balanceCheck(
       "usdc",
@@ -68,6 +70,7 @@ export function buildConnectionDoctor(input: DoctorInput): DoctorCheck[] {
       input.usdcBalance,
       input.requiredSellAmount ?? 1n,
       canInspect,
+      input.baseReadUnavailable,
     ),
     balanceCheck(
       "allowance",
@@ -75,6 +78,7 @@ export function buildConnectionDoctor(input: DoctorInput): DoctorCheck[] {
       input.allowance,
       input.requiredSellAmount ?? 1n,
       canInspect,
+      input.baseReadUnavailable,
     ),
   ];
 }
@@ -85,13 +89,25 @@ function balanceCheck(
   current: bigint | undefined,
   minimum: bigint,
   canInspect: boolean,
+  readUnavailable: boolean | undefined,
 ): DoctorCheck {
-  if (!canInspect || current === undefined) {
+  if (!canInspect) {
     return {
       id,
       label,
       state: "unavailable",
       detail: "Connect a Base organization wallet to inspect this value.",
+    };
+  }
+
+  if (current === undefined) {
+    return {
+      id,
+      label,
+      state: "attention",
+      detail: readUnavailable
+        ? "Base read is temporarily unavailable. KeeperHub remains connected."
+        : "Base value is unavailable.",
     };
   }
 
