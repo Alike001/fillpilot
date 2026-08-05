@@ -1,5 +1,6 @@
 import { FoundationSurface } from "@/components/foundation-surface";
 import { ConnectionDoctor } from "@/components/connection-doctor/connection-doctor";
+import { GoalComposer } from "@/components/goal-composer/goal-composer";
 
 export default function NewGoalPage() {
   return (
@@ -11,6 +12,7 @@ export default function NewGoalPage() {
       <Suspense fallback={null}>
         <ConnectionDoctor />
       </Suspense>
+      <GoalComposer />
     </FoundationSurface>
   );
 }
