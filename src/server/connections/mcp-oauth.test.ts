@@ -14,10 +14,12 @@ describe("MCP OAuth provider", () => {
       stored,
     );
     const state = await provider.state();
+    const repeatedState = await provider.state();
     await provider.saveCodeVerifier("verifier");
     await provider.saveTokens({ access_token: "access", token_type: "Bearer" });
 
     expect(state).toBe(stored.state);
+    expect(repeatedState).toBe(state);
     expect(provider.codeVerifier()).toBe("verifier");
     expect(provider.tokens()).toMatchObject({ access_token: "access" });
   });

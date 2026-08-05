@@ -42,9 +42,8 @@ export class SessionOAuthProvider implements OAuthClientProvider {
   }
 
   state() {
-    const state = randomUUID();
-    this.stored.state = state;
-    return state;
+    if (!this.stored.state) this.stored.state = randomUUID();
+    return this.stored.state;
   }
 
   clientInformation() {
