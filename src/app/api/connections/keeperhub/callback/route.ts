@@ -21,11 +21,20 @@ export async function GET(request: NextRequest) {
     const attemptId = openConnectionSession<string>(
       (await cookies()).get(CONNECTION_COOKIE)?.value,
     );
-    if (!attemptId) throw new Error("Missing OAuth session");
+    if (!attemptId) throw new CallbackValidationError("missing-session");
 
     const auth = await readOAuthAttempt(attemptId);
-    if (!auth) throw new Error("OAuth session expired");
-    if (!auth.redirectUrl) throw new Error("Missing OAuth redirect origin");
+    if (!auth) throw new CallbackValidationError("expired-attempt");
+    if (!auth.redirectUrl)
+      throw new CallbackValidationError("missing-redirect");
+
+    const returnedState = request.nextUrl.searchParams.get("state");
+    if (!returnedState) throw new CallbackValidationError("missing-state");
+    if (returnedState !== auth.state)
+      throw new CallbackValidationError("state-mismatch");
+    if (!request.nextUrl.searchParams.get("code"))
+      throw new CallbackValidationError("missing-code");
+
     const result = await finishMcpAuthorization(
       env.KEEPERHUB_MCP_URL,
       auth.redirectUrl,
@@ -45,13 +54,18 @@ export async function GET(request: NextRequest) {
     });
     return response;
   } catch (error) {
-    const message = error instanceof Error ? error.message : "unknown";
     const reason =
-      message.includes("state") || message.includes("session")
-        ? "callback-validation"
+      error instanceof CallbackValidationError
+        ? error.reason
         : "token-exchange";
     return NextResponse.redirect(
       new URL(`/app/new?connection=failed&reason=${reason}`, request.url),
     );
+  }
+}
+
+class CallbackValidationError extends Error {
+  constructor(readonly reason: string) {
+    super(reason);
   }
 }
