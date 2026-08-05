@@ -2,7 +2,7 @@ import { createPublicClient, http, parseAbi, type Address } from "viem";
 import { base } from "viem/chains";
 
 export const BASE_CHAIN_ID = 8453;
-export const BASE_USDC: Address = "0x833589fCD6EDB6E08f4c7C32D4f71b54bda02913";
+export const BASE_USDC: Address = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 
 const erc20ReadAbi = parseAbi([
   "function balanceOf(address account) view returns (uint256)",
