@@ -139,6 +139,26 @@ export async function finishMcpAuthorization(
 
   const connectedClient = client();
   await connectedClient.connect(transport(serverUrl, provider));
+  await discoverWalletIntegration(connectedClient, stored);
+  return { client: connectedClient, stored };
+}
+
+export async function refreshMcpWallet(
+  serverUrl: string,
+  redirectUrl: string,
+  stored: ConnectionAuthState,
+) {
+  const provider = new SessionOAuthProvider(redirectUrl, stored);
+  const connectedClient = client();
+  await connectedClient.connect(transport(serverUrl, provider));
+  await discoverWalletIntegration(connectedClient, stored);
+  return stored;
+}
+
+async function discoverWalletIntegration(
+  connectedClient: ReturnType<typeof client>,
+  stored: ConnectionAuthState,
+) {
   const tools = await connectedClient.listTools();
   const toolNames = new Set(tools.tools.map((tool) => tool.name));
   if (
@@ -150,7 +170,7 @@ export async function finishMcpAuthorization(
       arguments: {},
     });
     const integrationId = findWeb3IntegrationId(integrations);
-    if (!integrationId) return { client: connectedClient, stored };
+    if (!integrationId) return;
     const result = await connectedClient.callTool({
       name: "get_wallet_integration",
       arguments: { integrationId },
@@ -158,7 +178,6 @@ export async function finishMcpAuthorization(
     const walletAddress = extractAddress(result);
     if (walletAddress) stored.walletAddress = walletAddress;
   }
-  return { client: connectedClient, stored };
 }
 
 export function extractAddress(value: unknown): `0x${string}` | undefined {

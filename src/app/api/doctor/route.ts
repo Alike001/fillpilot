@@ -1,11 +1,17 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
+import { parseServerEnv } from "@/env";
 import { buildConnectionDoctor } from "@/server/connections/doctor";
-import { parseAuthState } from "@/server/connections/mcp-oauth";
+import {
+  parseAuthState,
+  refreshMcpWallet,
+  serializeAuthState,
+} from "@/server/connections/mcp-oauth";
 import {
   CONNECTION_COOKIE,
   openConnectionSession,
+  sealConnectionSession,
 } from "@/server/connections/session-cookie";
 import { readBaseWallet } from "@/server/integrations/base-reader";
 import {
@@ -21,13 +27,22 @@ export async function GET() {
     const session = openConnectionSession<string>(sealed);
     const auth = session ? parseAuthState(session) : undefined;
     const connected = Boolean(auth?.tokens?.access_token);
+    if (connected && auth?.redirectUrl && !auth.walletAddress) {
+      await refreshMcpWallet(
+        parseServerEnv().KEEPERHUB_MCP_URL,
+        auth.redirectUrl,
+        auth,
+      );
+    }
     if (!connected || !auth?.walletAddress) {
-      return NextResponse.json({
+      const response = NextResponse.json({
         checks: buildConnectionDoctor({
           connection: connected ? "connected" : "disconnected",
           walletAddress: auth?.walletAddress,
         }),
       });
+      if (auth) persistSession(response, auth);
+      return response;
     }
 
     const balances = await readBaseWallet(
@@ -36,7 +51,7 @@ export async function GET() {
         SupportedChainId.BASE
       ] as `0x${string}`,
     );
-    return NextResponse.json({
+    const response = NextResponse.json({
       checks: buildConnectionDoctor({
         connection: "connected",
         walletAddress: auth.walletAddress,
@@ -44,9 +59,22 @@ export async function GET() {
         ...balances,
       }),
     });
+    persistSession(response, auth);
+    return response;
   } catch {
     return NextResponse.json({
       checks: buildConnectionDoctor({ connection: "disconnected" }),
     });
   }
+}
+
+function persistSession(
+  response: NextResponse,
+  auth: NonNullable<ReturnType<typeof parseAuthState>>,
+) {
+  response.cookies.set(
+    CONNECTION_COOKIE,
+    sealConnectionSession(serializeAuthState(auth)),
+    { httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 },
+  );
 }
