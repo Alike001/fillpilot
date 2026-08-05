@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { OrderQuoteResponse } from "@cowprotocol/sdk-order-book";
 
-import { validateCowPreflight } from "./cow-preflight";
+import { getCowPreflight, validateCowPreflight } from "./cow-preflight";
 
 const NOW = new Date("2026-08-05T12:00:00.000Z");
 const INPUT = {
@@ -19,7 +19,7 @@ function response(overrides: Record<string, unknown> = {}): OrderQuoteResponse {
       sellAmount: "11900000",
       buyAmount: "4500000000000000",
       feeAmount: "100000",
-      validTo: 1_770_300_000,
+      validTo: Math.floor(INPUT.deadline.getTime() / 1000),
       appData: "{}",
       kind: "sell",
       partiallyFillable: false,
@@ -32,17 +32,55 @@ function response(overrides: Record<string, unknown> = {}): OrderQuoteResponse {
 }
 
 describe("CoW preflight", () => {
+  it("uses a local fake to request only the locked Base PRESIGN quote", async () => {
+    let request: unknown;
+    const fakeApi = {
+      async getQuote(input: unknown) {
+        request = input;
+        return response();
+      },
+    };
+
+    await expect(getCowPreflight(INPUT, fakeApi, NOW)).resolves.toMatchObject({
+      buyAmount: 4_500_000_000_000_000n,
+      verified: true,
+    });
+    expect(request).toMatchObject({
+      kind: "sell",
+      sellToken: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      buyToken: "0x4200000000000000000000000000000000000006",
+      sellAmountBeforeFee: "12000000",
+      from: INPUT.owner,
+      receiver: INPUT.owner,
+      signingScheme: "presign",
+      priceQuality: "verified",
+      validTo: Math.floor(INPUT.deadline.getTime() / 1000),
+    });
+  });
+
+  it("keeps a local CoW transport failure distinct from a quote decision", async () => {
+    const fakeApi = {
+      async getQuote() {
+        throw new Error("controlled fake outage");
+      },
+    };
+
+    await expect(getCowPreflight(INPUT, fakeApi, NOW)).rejects.toThrow(
+      "controlled fake outage",
+    );
+  });
+
   it("accepts a fresh verified Base quote that protects the exact floor", () => {
     const preflight = validateCowPreflight(
       response(),
       INPUT,
-      1_770_300_000,
+      Math.floor(INPUT.deadline.getTime() / 1000),
       NOW,
     );
 
     expect(preflight).toMatchObject({
       buyAmount: 4_500_000_000_000_000n,
-      validTo: 1_770_300_000,
+      validTo: Math.floor(INPUT.deadline.getTime() / 1000),
       verified: true,
     });
   });
@@ -68,7 +106,12 @@ describe("CoW preflight", () => {
     ],
   ])("rejects a %s quote", (_label, invalidResponse, expected) => {
     expect(() =>
-      validateCowPreflight(invalidResponse, INPUT, 1_770_300_000, NOW),
+      validateCowPreflight(
+        invalidResponse,
+        INPUT,
+        Math.floor(INPUT.deadline.getTime() / 1000),
+        NOW,
+      ),
     ).toThrow(expected);
   });
 });
