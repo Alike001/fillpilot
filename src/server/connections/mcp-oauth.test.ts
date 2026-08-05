@@ -52,6 +52,16 @@ describe("MCP OAuth provider", () => {
       }),
     ).toBe("wallet-1");
     expect(
+      findWeb3IntegrationId({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify([{ id: "wallet-2", type: "web3" }]),
+          },
+        ],
+      }),
+    ).toBe("wallet-2");
+    expect(
       findWeb3IntegrationId({ content: [{ type: "text", text: "{}" }] }),
     ).toBeUndefined();
   });

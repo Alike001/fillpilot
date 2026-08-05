@@ -173,10 +173,13 @@ export function findWeb3IntegrationId(value: unknown): string | undefined {
 
   try {
     const parsed: unknown = JSON.parse(content);
-    if (!parsed || typeof parsed !== "object") return undefined;
-    const data = (parsed as { data?: unknown }).data;
-    if (!Array.isArray(data)) return undefined;
-    const wallet = data.find(
+    const integrations = Array.isArray(parsed)
+      ? parsed
+      : parsed && typeof parsed === "object"
+        ? (parsed as { data?: unknown }).data
+        : undefined;
+    if (!Array.isArray(integrations)) return undefined;
+    const wallet = integrations.find(
       (item): item is { id: string; type: string } =>
         typeof item === "object" &&
         item !== null &&
