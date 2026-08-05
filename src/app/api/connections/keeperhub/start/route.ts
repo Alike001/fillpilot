@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       (await cookies()).get(CONNECTION_COOKIE)?.value,
     );
     const existing = existingAttemptId
-      ? readOAuthAttempt(existingAttemptId)
+      ? await readOAuthAttempt(existingAttemptId)
       : undefined;
     if (existing?.tokens?.access_token) {
       return NextResponse.redirect(
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
       env.KEEPERHUB_MCP_URL,
       redirectUrl,
     );
-    const attemptId = createOAuthAttempt(result.stored);
+    const attemptId = await createOAuthAttempt(result.stored);
     const response = NextResponse.redirect(result.authorizationUrl);
     response.cookies.set(CONNECTION_COOKIE, sealConnectionSession(attemptId), {
       httpOnly: true,

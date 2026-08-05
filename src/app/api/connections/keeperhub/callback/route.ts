@@ -3,7 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { parseServerEnv } from "@/env";
 import { finishMcpAuthorization } from "@/server/connections/mcp-oauth";
-import { readOAuthAttempt } from "@/server/connections/oauth-attempt-store";
+import {
+  readOAuthAttempt,
+  saveOAuthAttempt,
+} from "@/server/connections/oauth-attempt-store";
 import {
   CONNECTION_COOKIE,
   openConnectionSession,
@@ -20,15 +23,16 @@ export async function GET(request: NextRequest) {
     );
     if (!attemptId) throw new Error("Missing OAuth session");
 
-    const auth = readOAuthAttempt(attemptId);
+    const auth = await readOAuthAttempt(attemptId);
     if (!auth) throw new Error("OAuth session expired");
     if (!auth.redirectUrl) throw new Error("Missing OAuth redirect origin");
-    await finishMcpAuthorization(
+    const result = await finishMcpAuthorization(
       env.KEEPERHUB_MCP_URL,
       auth.redirectUrl,
       request.nextUrl.searchParams,
       auth,
     );
+    await saveOAuthAttempt(attemptId, result.stored);
     const response = NextResponse.redirect(
       new URL("/app/new?connected=1", request.nextUrl.origin),
     );

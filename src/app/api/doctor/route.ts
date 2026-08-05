@@ -4,7 +4,10 @@ import { NextResponse } from "next/server";
 import { parseServerEnv } from "@/env";
 import { buildConnectionDoctor } from "@/server/connections/doctor";
 import { refreshMcpWallet } from "@/server/connections/mcp-oauth";
-import { readOAuthAttempt } from "@/server/connections/oauth-attempt-store";
+import {
+  readOAuthAttempt,
+  saveOAuthAttempt,
+} from "@/server/connections/oauth-attempt-store";
 import {
   CONNECTION_COOKIE,
   openConnectionSession,
@@ -21,9 +24,9 @@ export async function GET() {
   try {
     const sealed = (await cookies()).get(CONNECTION_COOKIE)?.value;
     const attemptId = openConnectionSession<string>(sealed);
-    const auth = attemptId ? readOAuthAttempt(attemptId) : undefined;
+    const auth = attemptId ? await readOAuthAttempt(attemptId) : undefined;
     const connected = Boolean(auth?.tokens?.access_token);
-    if (connected && auth?.redirectUrl && !auth.walletAddress) {
+    if (connected && attemptId && auth?.redirectUrl && !auth.walletAddress) {
       await within(
         refreshMcpWallet(
           parseServerEnv().KEEPERHUB_MCP_URL,
@@ -32,6 +35,7 @@ export async function GET() {
         ),
         10_000,
       );
+      await saveOAuthAttempt(attemptId, auth);
     }
     if (!connected || !auth?.walletAddress) {
       const response = NextResponse.json({
