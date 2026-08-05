@@ -40,9 +40,12 @@
     "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm secret:scan && pnpm size:check && pnpm test:unit && pnpm test:integration && pnpm db:check && pnpm build && pnpm test:e2e"
   },
   "dependencies": {
+    "@cowprotocol/sdk-common": "0.12.1",
     "@cowprotocol/sdk-config": "^2.4.0",
+    "@cowprotocol/sdk-contracts-ts": "3.3.3",
     "@cowprotocol/sdk-order-book": "^4.0.2",
     "@cowprotocol/sdk-order-signing": "^1.1.6",
+    "@cowprotocol/sdk-viem-adapter": "0.3.26",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",

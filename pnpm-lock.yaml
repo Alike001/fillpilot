@@ -12,15 +12,24 @@ importers:
 
   .:
     dependencies:
+      '@cowprotocol/sdk-common':
+        specifier: 0.12.1
+        version: 0.12.1
       '@cowprotocol/sdk-config':
         specifier: ^2.4.0
         version: 2.4.0
+      '@cowprotocol/sdk-contracts-ts':
+        specifier: 3.3.3
+        version: 3.3.3
       '@cowprotocol/sdk-order-book':
         specifier: ^4.0.2
         version: 4.0.2
       '@cowprotocol/sdk-order-signing':
         specifier: ^1.1.6
         version: 1.1.6
+      '@cowprotocol/sdk-viem-adapter':
+        specifier: 0.3.26
+        version: 0.3.26(viem@2.55.10(typescript@5.9.3)(zod@4.4.3))
       '@modelcontextprotocol/sdk':
         specifier: ^1.30.0
         version: 1.30.0(zod@4.4.3)
@@ -279,6 +288,11 @@ packages:
 
   '@cowprotocol/sdk-order-signing@1.1.6':
     resolution: {integrity: sha512-PyHxKuuuSk9lPRfymTydPGXDoWZEzwzgSgZIenShnPcQDyqyanxroUwV98Vv/zklm4Ah6KxUIZVr/lVmlRg4Hw==}
+
+  '@cowprotocol/sdk-viem-adapter@0.3.26':
+    resolution: {integrity: sha512-pLyGV2YUX3tDonEEScV3Bmt59hLm9ouMpk1SFuEztRrBXp/C/V6hjMsVPr9Q9jgGKtF/lG487QaSAJ29/S2P7g==}
+    peerDependencies:
+      viem: ^2.28.4
 
   '@drizzle-team/brocli@0.10.2':
     resolution: {integrity: sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w==}
@@ -4176,6 +4190,11 @@ snapshots:
       '@cowprotocol/sdk-order-book': 4.0.2
     transitivePeerDependencies:
       - encoding
+
+  '@cowprotocol/sdk-viem-adapter@0.3.26(viem@2.55.10(typescript@5.9.3)(zod@4.4.3))':
+    dependencies:
+      '@cowprotocol/sdk-common': 0.12.1
+      viem: 2.55.10(typescript@5.9.3)(zod@4.4.3)
 
   '@drizzle-team/brocli@0.10.2': {}
 
