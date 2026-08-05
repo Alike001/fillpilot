@@ -2,11 +2,11 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 import { parseServerEnv } from "@/env";
+import { beginMcpAuthorization } from "@/server/connections/mcp-oauth";
 import {
-  beginMcpAuthorization,
-  parseAuthState,
-  serializeAuthState,
-} from "@/server/connections/mcp-oauth";
+  createOAuthAttempt,
+  readOAuthAttempt,
+} from "@/server/connections/oauth-attempt-store";
 import {
   CONNECTION_COOKIE,
   openConnectionSession,
@@ -25,11 +25,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const existingSession = openConnectionSession<string>(
+    const existingAttemptId = openConnectionSession<string>(
       (await cookies()).get(CONNECTION_COOKIE)?.value,
     );
-    const existing = existingSession
-      ? parseAuthState(existingSession)
+    const existing = existingAttemptId
+      ? readOAuthAttempt(existingAttemptId)
       : undefined;
     if (existing?.tokens?.access_token) {
       return NextResponse.redirect(
@@ -45,18 +45,15 @@ export async function GET(request: NextRequest) {
       env.KEEPERHUB_MCP_URL,
       redirectUrl,
     );
+    const attemptId = createOAuthAttempt(result.stored);
     const response = NextResponse.redirect(result.authorizationUrl);
-    response.cookies.set(
-      CONNECTION_COOKIE,
-      sealConnectionSession(serializeAuthState(result.stored)),
-      {
-        httpOnly: true,
-        sameSite: "lax",
-        secure: env.NODE_ENV === "production",
-        path: "/",
-        maxAge: 60 * 10,
-      },
-    );
+    response.cookies.set(CONNECTION_COOKIE, sealConnectionSession(attemptId), {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 60 * 10,
+    });
     return response;
   } catch {
     return NextResponse.json(

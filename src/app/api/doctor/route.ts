@@ -3,15 +3,11 @@ import { NextResponse } from "next/server";
 
 import { parseServerEnv } from "@/env";
 import { buildConnectionDoctor } from "@/server/connections/doctor";
-import {
-  parseAuthState,
-  refreshMcpWallet,
-  serializeAuthState,
-} from "@/server/connections/mcp-oauth";
+import { refreshMcpWallet } from "@/server/connections/mcp-oauth";
+import { readOAuthAttempt } from "@/server/connections/oauth-attempt-store";
 import {
   CONNECTION_COOKIE,
   openConnectionSession,
-  sealConnectionSession,
 } from "@/server/connections/session-cookie";
 import { readBaseWallet } from "@/server/integrations/base-reader";
 import {
@@ -24,8 +20,8 @@ export const runtime = "nodejs";
 export async function GET() {
   try {
     const sealed = (await cookies()).get(CONNECTION_COOKIE)?.value;
-    const session = openConnectionSession<string>(sealed);
-    const auth = session ? parseAuthState(session) : undefined;
+    const attemptId = openConnectionSession<string>(sealed);
+    const auth = attemptId ? readOAuthAttempt(attemptId) : undefined;
     const connected = Boolean(auth?.tokens?.access_token);
     if (connected && auth?.redirectUrl && !auth.walletAddress) {
       await within(
@@ -44,7 +40,6 @@ export async function GET() {
           walletAddress: auth?.walletAddress,
         }),
       });
-      if (auth) persistSession(response, auth);
       return response;
     }
 
@@ -62,7 +57,6 @@ export async function GET() {
         ...balances,
       }),
     });
-    persistSession(response, auth);
     return response;
   } catch {
     return NextResponse.json({
@@ -81,15 +75,4 @@ function within<T>(operation: Promise<T>, timeoutMs: number): Promise<T> {
       );
     }),
   ]);
-}
-
-function persistSession(
-  response: NextResponse,
-  auth: NonNullable<ReturnType<typeof parseAuthState>>,
-) {
-  response.cookies.set(
-    CONNECTION_COOKIE,
-    sealConnectionSession(serializeAuthState(auth)),
-    { httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 },
-  );
 }

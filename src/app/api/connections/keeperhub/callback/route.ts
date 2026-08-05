@@ -2,11 +2,8 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 import { parseServerEnv } from "@/env";
-import {
-  finishMcpAuthorization,
-  parseAuthState,
-  serializeAuthState,
-} from "@/server/connections/mcp-oauth";
+import { finishMcpAuthorization } from "@/server/connections/mcp-oauth";
+import { readOAuthAttempt } from "@/server/connections/oauth-attempt-store";
 import {
   CONNECTION_COOKIE,
   openConnectionSession,
@@ -18,14 +15,15 @@ export const runtime = "nodejs";
 export async function GET(request: NextRequest) {
   try {
     const env = parseServerEnv();
-    const session = openConnectionSession<string>(
+    const attemptId = openConnectionSession<string>(
       (await cookies()).get(CONNECTION_COOKIE)?.value,
     );
-    if (!session) throw new Error("Missing OAuth session");
+    if (!attemptId) throw new Error("Missing OAuth session");
 
-    const auth = parseAuthState(session);
+    const auth = readOAuthAttempt(attemptId);
+    if (!auth) throw new Error("OAuth session expired");
     if (!auth.redirectUrl) throw new Error("Missing OAuth redirect origin");
-    const { stored } = await finishMcpAuthorization(
+    await finishMcpAuthorization(
       env.KEEPERHUB_MCP_URL,
       auth.redirectUrl,
       request.nextUrl.searchParams,
@@ -34,17 +32,13 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.redirect(
       new URL("/app/new?connected=1", request.nextUrl.origin),
     );
-    response.cookies.set(
-      CONNECTION_COOKIE,
-      sealConnectionSession(serializeAuthState(stored)),
-      {
-        httpOnly: true,
-        sameSite: "lax",
-        secure: env.NODE_ENV === "production",
-        path: "/",
-        maxAge: 60 * 60,
-      },
-    );
+    response.cookies.set(CONNECTION_COOKIE, sealConnectionSession(attemptId), {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 60 * 60,
+    });
     return response;
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown";
