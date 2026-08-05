@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 import { parseServerEnv } from "@/env";
 import {
@@ -12,7 +12,7 @@ import {
 
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const env = parseServerEnv();
     if (!env.TOKEN_ENCRYPTION_KEY) {
@@ -24,7 +24,7 @@ export async function GET() {
 
     const redirectUrl = new URL(
       "/api/connections/keeperhub/callback",
-      env.APP_URL,
+      request.nextUrl.origin,
     ).toString();
     const result = await beginMcpAuthorization(
       env.KEEPERHUB_MCP_URL,

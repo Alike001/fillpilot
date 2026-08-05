@@ -15,6 +15,7 @@ import type {
 
 export type ConnectionAuthState = {
   authorizationUrl?: string;
+  redirectUrl?: string;
   clientInformation?: OAuthClientInformationMixed;
   codeVerifier?: string;
   discovery?: OAuthDiscoveryState;
@@ -104,6 +105,7 @@ export async function beginMcpAuthorization(
   redirectUrl: string,
   stored: ConnectionAuthState = {},
 ) {
+  stored.redirectUrl = redirectUrl;
   const provider = new SessionOAuthProvider(redirectUrl, stored);
 
   try {

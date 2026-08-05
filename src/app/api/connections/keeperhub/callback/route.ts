@@ -23,18 +23,16 @@ export async function GET(request: NextRequest) {
     );
     if (!session) throw new Error("Missing OAuth session");
 
-    const redirectUrl = new URL(
-      "/api/connections/keeperhub/callback",
-      env.APP_URL,
-    ).toString();
+    const auth = parseAuthState(session);
+    if (!auth.redirectUrl) throw new Error("Missing OAuth redirect origin");
     const { stored } = await finishMcpAuthorization(
       env.KEEPERHUB_MCP_URL,
-      redirectUrl,
+      auth.redirectUrl,
       request.nextUrl.searchParams,
-      parseAuthState(session),
+      auth,
     );
     const response = NextResponse.redirect(
-      new URL("/app/new?connected=1", env.APP_URL),
+      new URL("/app/new?connected=1", request.nextUrl.origin),
     );
     response.cookies.set(
       CONNECTION_COOKIE,
