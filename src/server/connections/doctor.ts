@@ -7,6 +7,7 @@ export type DoctorInput = {
   allowance?: bigint;
   requiredSellAmount?: bigint;
   baseReadUnavailable?: boolean;
+  connectionIssue?: "missing-session" | "expired-attempt";
 };
 
 export type DoctorCheck = {
@@ -32,7 +33,7 @@ export function buildConnectionDoctor(input: DoctorInput): DoctorCheck[] {
       state: connected ? "ready" : "attention",
       detail: connected
         ? "Read-only organization connection is active."
-        : "Connect KeeperHub to inspect an organization wallet.",
+        : connectionDetail(input.connectionIssue),
     },
     {
       id: "wallet",
@@ -81,6 +82,16 @@ export function buildConnectionDoctor(input: DoctorInput): DoctorCheck[] {
       input.baseReadUnavailable,
     ),
   ];
+}
+
+function connectionDetail(issue: DoctorInput["connectionIssue"]): string {
+  if (issue === "missing-session") {
+    return "Browser session is missing. Use the same local hostname used to connect.";
+  }
+  if (issue === "expired-attempt") {
+    return "The saved connection could not be read. Connect KeeperHub once more.";
+  }
+  return "Connect KeeperHub to inspect an organization wallet.";
 }
 
 function balanceCheck(

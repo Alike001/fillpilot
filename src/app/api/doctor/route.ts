@@ -23,8 +23,18 @@ export const runtime = "nodejs";
 export async function GET() {
   try {
     const sealed = (await cookies()).get(CONNECTION_COOKIE)?.value;
-    const attemptId = openConnectionSession<string>(sealed);
+    if (!sealed) return disconnected("missing-session");
+
+    let attemptId: string | undefined;
+    try {
+      attemptId = openConnectionSession<string>(sealed);
+    } catch {
+      return disconnected("missing-session");
+    }
+    if (!attemptId) return disconnected("missing-session");
+
     const auth = attemptId ? await readOAuthAttempt(attemptId) : undefined;
+    if (!auth) return disconnected("expired-attempt");
     const connected = Boolean(auth?.tokens?.access_token);
     if (connected && attemptId && auth?.redirectUrl && !auth.walletAddress) {
       await within(
@@ -73,10 +83,17 @@ export async function GET() {
       });
     }
   } catch {
-    return NextResponse.json({
-      checks: buildConnectionDoctor({ connection: "disconnected" }),
-    });
+    return disconnected("expired-attempt");
   }
+}
+
+function disconnected(issue: "missing-session" | "expired-attempt") {
+  return NextResponse.json({
+    checks: buildConnectionDoctor({
+      connection: "disconnected",
+      connectionIssue: issue,
+    }),
+  });
 }
 
 function within<T>(operation: Promise<T>, timeoutMs: number): Promise<T> {

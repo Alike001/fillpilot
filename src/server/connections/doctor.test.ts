@@ -16,6 +16,18 @@ describe("connection doctor", () => {
     ]);
   });
 
+  it("explains a missing browser session without exposing credentials", () => {
+    const checks = buildConnectionDoctor({
+      connection: "disconnected",
+      connectionIssue: "missing-session",
+    });
+
+    expect(checks.find((check) => check.id === "connection")).toMatchObject({
+      detail:
+        "Browser session is missing. Use the same local hostname used to connect.",
+    });
+  });
+
   it("flags a connected organization on the wrong chain", () => {
     const checks = buildConnectionDoctor({
       connection: "connected",
