@@ -9,6 +9,7 @@ export default defineConfig({
   test: {
     projects: [
       {
+        resolve: { alias: { "@": src } },
         test: {
           name: "unit",
           include: ["src/**/*.test.ts"],
@@ -17,6 +18,7 @@ export default defineConfig({
         },
       },
       {
+        resolve: { alias: { "@": src } },
         test: {
           name: "integration",
           include: ["tests/integration/**/*.test.ts"],
@@ -25,6 +27,7 @@ export default defineConfig({
         },
       },
       {
+        resolve: { alias: { "@": src } },
         test: {
           name: "fork",
           include: ["tests/fork/**/*.test.ts"],

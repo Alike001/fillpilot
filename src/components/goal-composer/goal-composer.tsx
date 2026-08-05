@@ -20,6 +20,7 @@ const INITIAL_INPUT: GoalDraftInput = {
 export function GoalComposer() {
   const [input, setInput] = useState<GoalDraftInput>(INITIAL_INPUT);
   const [submitted, setSubmitted] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<string>();
 
   const validation = useMemo(() => {
     try {
@@ -35,6 +36,7 @@ export function GoalComposer() {
 
   function update(field: keyof GoalDraftInput, value: string) {
     setSubmitted(false);
+    setSaveStatus(undefined);
     setInput((current) => ({ ...current, [field]: value }));
   }
 
@@ -128,12 +130,44 @@ export function GoalComposer() {
           <button className={styles.validate} type="submit">
             Validate execution plan
           </button>
+          <button
+            className={styles.validate}
+            disabled={!validation.draft}
+            onClick={async () => {
+              if (!validation.draft) return;
+              setSaveStatus("Saving draft goal…");
+              try {
+                const response = await fetch("/api/goals", {
+                  method: "POST",
+                  headers: { "content-type": "application/json" },
+                  body: JSON.stringify(input),
+                });
+                const body = (await response.json()) as {
+                  error?: string;
+                  id?: string;
+                };
+                setSaveStatus(
+                  response.ok && body.id
+                    ? `Draft saved: ${body.id}. No order or transaction was created.`
+                    : (body.error ?? "Could not save draft."),
+                );
+              } catch {
+                setSaveStatus(
+                  "Could not reach FillPilot. Your goal was not saved.",
+                );
+              }
+            }}
+            type="button"
+          >
+            Save draft goal
+          </button>
           <p className={styles.status} aria-live="polite" role="status">
-            {submitted && validation.draft
-              ? "Inputs are valid. No goal, quote, authorization, or transaction has been created."
-              : submitted
-                ? validation.error
-                : "Validation is local and exact-value only."}
+            {saveStatus ??
+              (submitted && validation.draft
+                ? "Inputs are valid. No goal, quote, authorization, or transaction has been created."
+                : submitted
+                  ? validation.error
+                  : "Validation is local and exact-value only.")}
           </p>
         </form>
 
