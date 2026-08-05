@@ -1,12 +1,15 @@
+import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 import { parseServerEnv } from "@/env";
 import {
   beginMcpAuthorization,
+  parseAuthState,
   serializeAuthState,
 } from "@/server/connections/mcp-oauth";
 import {
   CONNECTION_COOKIE,
+  openConnectionSession,
   sealConnectionSession,
 } from "@/server/connections/session-cookie";
 
@@ -19,6 +22,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { error: "Connection storage is not configured." },
         { status: 503 },
+      );
+    }
+
+    const existingSession = openConnectionSession<string>(
+      (await cookies()).get(CONNECTION_COOKIE)?.value,
+    );
+    const existing = existingSession
+      ? parseAuthState(existingSession)
+      : undefined;
+    if (existing?.tokens?.access_token) {
+      return NextResponse.redirect(
+        new URL("/app/new?connected=existing", request.nextUrl.origin),
       );
     }
 

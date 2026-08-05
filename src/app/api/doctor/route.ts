@@ -28,10 +28,13 @@ export async function GET() {
     const auth = session ? parseAuthState(session) : undefined;
     const connected = Boolean(auth?.tokens?.access_token);
     if (connected && auth?.redirectUrl && !auth.walletAddress) {
-      await refreshMcpWallet(
-        parseServerEnv().KEEPERHUB_MCP_URL,
-        auth.redirectUrl,
-        auth,
+      await within(
+        refreshMcpWallet(
+          parseServerEnv().KEEPERHUB_MCP_URL,
+          auth.redirectUrl,
+          auth,
+        ),
+        10_000,
       );
     }
     if (!connected || !auth?.walletAddress) {
@@ -66,6 +69,18 @@ export async function GET() {
       checks: buildConnectionDoctor({ connection: "disconnected" }),
     });
   }
+}
+
+function within<T>(operation: Promise<T>, timeoutMs: number): Promise<T> {
+  return Promise.race([
+    operation,
+    new Promise<never>((_, reject) => {
+      setTimeout(
+        () => reject(new Error("KeeperHub read timed out")),
+        timeoutMs,
+      );
+    }),
+  ]);
 }
 
 function persistSession(
