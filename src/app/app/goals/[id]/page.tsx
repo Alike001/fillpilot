@@ -1,5 +1,6 @@
 import { FoundationSurface } from "@/components/foundation-surface";
 import { GoalPreflight } from "@/components/goal-preflight/goal-preflight";
+import { GoalTimeline } from "@/components/goal-timeline/goal-timeline";
 
 export default async function GoalDetailPage({
   params,
@@ -9,10 +10,11 @@ export default async function GoalDetailPage({
   return (
     <FoundationSurface
       eyebrow="Goal atlas"
-      title="Read the market before you commit."
-      body="A fresh verified CoW quote is evidence, not an order. FillPilot keeps that boundary explicit."
+      title="Keep every boundary visible."
+      body="This timeline separates your goal, CoW quote evidence, KeeperHub execution evidence, and any eventual economic outcome."
       identifier={id}
     >
+      <GoalTimeline goalId={id} />
       <GoalPreflight goalId={id} />
     </FoundationSurface>
   );
