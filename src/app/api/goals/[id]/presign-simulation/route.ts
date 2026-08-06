@@ -68,12 +68,16 @@ export async function POST(
         "KeeperHub simulated this call only. No order, approval, signature, or transaction was created.",
     });
   } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Simulation could not run.";
+    const unavailable = message === "fetch failed";
     return NextResponse.json(
       {
-        error:
-          error instanceof Error ? error.message : "Simulation could not run.",
+        error: unavailable
+          ? "KeeperHub could not be reached for this simulation. No signature, order, approval, or transaction was created. Retry after confirming the local server has network access."
+          : message,
       },
-      { status: 502 },
+      { status: unavailable ? 503 : 502 },
     );
   }
 }

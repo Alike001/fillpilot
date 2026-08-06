@@ -53,13 +53,17 @@ export async function GET(
         "Quote only. No order, approval, KeeperHub execution, or transaction was created.",
     });
   } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Quote could not be read.";
+    const unavailable = message === "fetch failed";
     return NextResponse.json(
       {
         status: "unavailable",
-        error:
-          error instanceof Error ? error.message : "Quote could not be read.",
+        error: unavailable
+          ? "CoW could not be reached for this quote. No order, approval, execution, or transaction was created. Retry after confirming the local server has network access."
+          : message,
       },
-      { status: 502 },
+      { status: unavailable ? 503 : 502 },
     );
   }
 }
