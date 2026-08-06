@@ -4,6 +4,7 @@ import {
   parseServerEnv,
   requireDatabaseUrl,
   requireKeeperHubApiKey,
+  requireMainnetWritesEnabled,
 } from "./env";
 
 describe("server environment", () => {
@@ -64,5 +65,16 @@ describe("server environment", () => {
     expect(() => requireKeeperHubApiKey(parseServerEnv({}))).toThrow(
       /KEEPERHUB_API_KEY/,
     );
+  });
+
+  it("keeps mainnet writes disabled unless the exact server flag is set", () => {
+    expect(() => requireMainnetWritesEnabled(parseServerEnv({}))).toThrow(
+      "Mainnet writes are disabled",
+    );
+    expect(() =>
+      requireMainnetWritesEnabled(
+        parseServerEnv({ ENABLE_MAINNET_WRITES: "true" }),
+      ),
+    ).not.toThrow();
   });
 });

@@ -24,6 +24,13 @@ const optionalKeeperHubApiKey = z.preprocess(
     .optional(),
 );
 
+const writeEnablement = z
+  .preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.literal("true").optional(),
+  )
+  .transform((value) => value === "true");
+
 export const serverEnvSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
@@ -33,6 +40,7 @@ export const serverEnvSchema = z.object({
   APP_URL: z.url().default("http://127.0.0.1:3000"),
   KEEPERHUB_MCP_URL: z.url().default("https://app.keeperhub.com/mcp"),
   KEEPERHUB_API_KEY: optionalKeeperHubApiKey,
+  ENABLE_MAINNET_WRITES: writeEnablement,
   TOKEN_ENCRYPTION_KEY: optionalEncryptionKey,
 });
 
@@ -67,4 +75,13 @@ export function requireKeeperHubApiKey(env = parseServerEnv()): string {
     );
   }
   return env.KEEPERHUB_API_KEY;
+}
+
+/** Mainnet writes are server-only and fail closed by default. */
+export function requireMainnetWritesEnabled(env = parseServerEnv()): void {
+  if (!env.ENABLE_MAINNET_WRITES) {
+    throw new Error(
+      "Mainnet writes are disabled. Set ENABLE_MAINNET_WRITES=true only after explicit operator approval.",
+    );
+  }
 }
