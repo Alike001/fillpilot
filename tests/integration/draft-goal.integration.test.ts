@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { decryptSecret } from "../../src/server/connections/crypto";
 import {
   applyExecutionReconciliation,
+  listGoalHistoryForWallet,
   recordSimulationEvidence,
   recordSubmittedExecution,
   readExecutionForWallet,
@@ -88,6 +89,14 @@ describeWithDatabase("draft goal persistence", () => {
     };
     await recordSimulationEvidence(input);
     await recordSimulationEvidence(input);
+    await expect(listGoalHistoryForWallet(walletAddress)).resolves.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: saved.id,
+          latestExecution: expect.objectContaining({ state: "SIMULATED" }),
+        }),
+      ]),
+    );
     const [{ count }] = await client!<
       { count: string }[]
     >`select count(*) from keeperhub_executions where goal_id = ${saved.id}`;

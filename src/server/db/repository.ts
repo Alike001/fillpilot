@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 
 import { validateGoalDraft, type GoalDraftInput } from "@/domain/goal-draft";
 import { encryptSecret } from "@/server/connections/crypto";
@@ -87,6 +87,76 @@ export async function readGoalForWallet(goalId: string, walletAddress: string) {
       )
       .limit(1);
     return goal;
+  } finally {
+    await client.end();
+  }
+}
+
+export async function listGoalHistoryForWallet(walletAddress: string) {
+  const fingerprint = createHash("sha256")
+    .update(walletAddress.toLowerCase())
+    .digest("hex");
+  const { client, db } = createDatabase();
+  try {
+    const rows = await db
+      .select({
+        id: goals.id,
+        sellAmount: goals.sellAmount,
+        minimumBuyAmount: goals.minimumBuyAmount,
+        deadline: goals.deadline,
+        state: goals.state,
+        createdAt: goals.createdAt,
+        executionState: keeperhubExecutions.state,
+        operation: keeperhubExecutions.operation,
+        simulation: keeperhubExecutions.simulation,
+        executionCreatedAt: keeperhubExecutions.createdAt,
+      })
+      .from(goals)
+      .innerJoin(connections, eq(goals.connectionId, connections.id))
+      .leftJoin(keeperhubExecutions, eq(keeperhubExecutions.goalId, goals.id))
+      .where(eq(connections.organizationFingerprint, fingerprint))
+      .orderBy(desc(goals.createdAt), desc(keeperhubExecutions.createdAt));
+
+    const byGoal = new Map<
+      string,
+      {
+        id: string;
+        sellAmount: string;
+        minimumBuyAmount: string;
+        deadline: Date;
+        state: string;
+        createdAt: Date;
+        latestExecution?: {
+          state: string;
+          operation: string;
+          simulation: unknown;
+          createdAt: Date;
+        };
+      }
+    >();
+    for (const row of rows) {
+      if (!byGoal.has(row.id)) {
+        byGoal.set(row.id, {
+          id: row.id,
+          sellAmount: row.sellAmount,
+          minimumBuyAmount: row.minimumBuyAmount,
+          deadline: row.deadline,
+          state: row.state,
+          createdAt: row.createdAt,
+          ...(row.executionState && row.operation && row.executionCreatedAt
+            ? {
+                latestExecution: {
+                  state: row.executionState,
+                  operation: row.operation,
+                  simulation: row.simulation,
+                  createdAt: row.executionCreatedAt,
+                },
+              }
+            : {}),
+        });
+      }
+    }
+    return [...byGoal.values()];
   } finally {
     await client.end();
   }
