@@ -6,7 +6,7 @@ import { encryptSecret } from "@/server/connections/crypto";
 import type { ConnectionAuthState } from "@/server/connections/mcp-oauth";
 
 import { createDatabase } from "./client";
-import { connections, goals } from "./schema";
+import { connections, goals, keeperhubExecutions } from "./schema";
 
 const BASE_USDC = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 const BASE_WETH = "0x4200000000000000000000000000000000000006";
@@ -86,6 +86,36 @@ export async function readGoalForWallet(goalId: string, walletAddress: string) {
       )
       .limit(1);
     return goal;
+  } finally {
+    await client.end();
+  }
+}
+
+export async function recordSimulationEvidence(input: {
+  goalId: string;
+  idempotencyKey: string;
+  operation: string;
+  simulation: unknown;
+}) {
+  const { client, db } = createDatabase();
+  try {
+    const [record] = await db
+      .insert(keeperhubExecutions)
+      .values({
+        goalId: input.goalId,
+        operation: input.operation,
+        idempotencyKey: input.idempotencyKey,
+        simulation: input.simulation,
+        state: "SIMULATED",
+      })
+      .onConflictDoNothing({
+        target: keeperhubExecutions.idempotencyKey,
+      })
+      .returning({
+        id: keeperhubExecutions.id,
+        state: keeperhubExecutions.state,
+      });
+    return record;
   } finally {
     await client.end();
   }

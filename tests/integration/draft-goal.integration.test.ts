@@ -2,7 +2,10 @@ import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { decryptSecret } from "../../src/server/connections/crypto";
-import { saveDraftGoal } from "../../src/server/db/repository";
+import {
+  recordSimulationEvidence,
+  saveDraftGoal,
+} from "../../src/server/db/repository";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
@@ -56,6 +59,36 @@ describeWithDatabase("draft goal persistence", () => {
     });
     expect(decryptSecret(row.encrypted_tokens)).toContain("test-access-token");
 
+    await client!`delete from goals where id = ${saved.id}`;
+    await client!`delete from connections where wallet_address = ${walletAddress}`;
+  });
+
+  it("records one simulation evidence row for duplicate triggers", async () => {
+    const walletAddress = "0x2222222222222222222222222222222222222222" as const;
+    const saved = await saveDraftGoal(
+      {
+        walletAddress,
+        tokens: { access_token: "test-token", token_type: "Bearer" },
+      },
+      {
+        sellAmount: "1",
+        preferredBuyAmount: "0.002",
+        minimumBuyAmount: "0.001",
+        deadline: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      },
+    );
+    const input = {
+      goalId: saved.id,
+      idempotencyKey: `simulation:${saved.id}`,
+      operation: "presign",
+      simulation: { status: "simulated" },
+    };
+    await recordSimulationEvidence(input);
+    await recordSimulationEvidence(input);
+    const [{ count }] = await client!<
+      { count: string }[]
+    >`select count(*) from keeperhub_executions where goal_id = ${saved.id}`;
+    expect(count).toBe("1");
     await client!`delete from goals where id = ${saved.id}`;
     await client!`delete from connections where wallet_address = ${walletAddress}`;
   });
