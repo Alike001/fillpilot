@@ -8,7 +8,10 @@ type Goal = {
   deadline: string;
   latestExecution?: {
     state: string;
+    executionId?: string;
     simulation?: { gasEstimate?: string };
+    transactionHash?: string;
+    transactionLink?: string;
     createdAt: string;
   };
 };
@@ -16,6 +19,7 @@ type Goal = {
 export function GoalTimeline({ goalId }: { goalId: string }) {
   const [goal, setGoal] = useState<Goal>();
   const [error, setError] = useState<string>();
+  const [receiptStatus, setReceiptStatus] = useState<string>();
   useEffect(() => {
     const load = () => {
       void fetch("/api/goals/history")
@@ -48,6 +52,30 @@ export function GoalTimeline({ goalId }: { goalId: string }) {
   if (error) return <p className={styles.empty}>{error}</p>;
   if (!goal) return <p className={styles.empty}>Reading execution evidence…</p>;
   const gas = goal.latestExecution?.simulation?.gasEstimate;
+  const execution = goal.latestExecution;
+  async function refreshReceipt() {
+    if (!execution?.executionId) return;
+    setReceiptStatus("Reading KeeperHub receipt…");
+    try {
+      const response = await fetch(
+        `/api/goals/${goalId}/executions/${encodeURIComponent(execution.executionId)}`,
+      );
+      const body = (await response.json()) as {
+        state?: string;
+        transactionHash?: string;
+        error?: string;
+      };
+      setReceiptStatus(
+        response.ok
+          ? body.transactionHash
+            ? `${body.state}: verified transaction ${body.transactionHash}`
+            : `${body.state ?? "Submitted"}: no verified transaction receipt yet.`
+          : (body.error ?? "Receipt could not be read."),
+      );
+    } catch {
+      setReceiptStatus("Receipt could not be read.");
+    }
+  }
   return (
     <section className={styles.timeline} aria-label="Execution timeline">
       <div className={styles.stage}>
@@ -77,13 +105,29 @@ export function GoalTimeline({ goalId }: { goalId: string }) {
               ? `${gas} gas · simulation only`
               : "No execution evidence yet."}
           </span>
+          {execution?.executionId ? (
+            <button
+              className={styles.receiptButton}
+              onClick={refreshReceipt}
+              type="button"
+            >
+              Refresh receipt
+            </button>
+          ) : null}
+          {receiptStatus ? (
+            <span className={styles.receipt}>{receiptStatus}</span>
+          ) : null}
         </div>
       </div>
       <div className={styles.stage}>
         <b>04</b>
         <div>
           <strong>Onchain authorization</strong>
-          <span>Guarded — not created.</span>
+          <span>
+            {execution?.transactionHash
+              ? "Recorded separately from simulation."
+              : "Guarded — not created."}
+          </span>
         </div>
       </div>
     </section>

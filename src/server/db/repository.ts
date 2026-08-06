@@ -107,8 +107,11 @@ export async function listGoalHistoryForWallet(walletAddress: string) {
         state: goals.state,
         createdAt: goals.createdAt,
         executionState: keeperhubExecutions.state,
+        executionId: keeperhubExecutions.executionId,
         operation: keeperhubExecutions.operation,
         simulation: keeperhubExecutions.simulation,
+        transactionHash: keeperhubExecutions.transactionHash,
+        transactionLink: keeperhubExecutions.transactionLink,
         executionCreatedAt: keeperhubExecutions.createdAt,
       })
       .from(goals)
@@ -129,7 +132,10 @@ export async function listGoalHistoryForWallet(walletAddress: string) {
         latestExecution?: {
           state: string;
           operation: string;
+          executionId?: string;
           simulation: unknown;
+          transactionHash?: string;
+          transactionLink?: string;
           createdAt: Date;
         };
       }
@@ -148,7 +154,10 @@ export async function listGoalHistoryForWallet(walletAddress: string) {
                 latestExecution: {
                   state: row.executionState,
                   operation: row.operation,
+                  executionId: row.executionId ?? undefined,
                   simulation: row.simulation,
+                  transactionHash: row.transactionHash ?? undefined,
+                  transactionLink: row.transactionLink ?? undefined,
                   createdAt: row.executionCreatedAt,
                 },
               }
