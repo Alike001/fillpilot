@@ -46,4 +46,23 @@ describe("KeeperHub simulation boundary", () => {
       }),
     );
   });
+
+  it("serializes bigint gas evidence before a database recorder sees it", async () => {
+    const record = vi.fn().mockResolvedValue(undefined);
+    await simulateAndRecord(
+      {
+        simulate: vi
+          .fn()
+          .mockResolvedValue({ status: "simulated", gasEstimate: 65_000n }),
+      },
+      { record },
+      REQUEST,
+    );
+
+    expect(record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        simulation: { status: "simulated", gasEstimate: "65000" },
+      }),
+    );
+  });
 });

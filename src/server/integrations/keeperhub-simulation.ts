@@ -9,6 +9,10 @@ export type SimulationResult =
   | { readonly status: "simulated"; readonly gasEstimate: bigint }
   | { readonly status: "rejected"; readonly reason: string };
 
+export type StoredSimulationEvidence =
+  | { readonly status: "simulated"; readonly gasEstimate: string }
+  | { readonly status: "rejected"; readonly reason: string };
+
 export type KeeperHubSimulator = {
   simulate(request: SimulationRequest): Promise<SimulationResult>;
 };
@@ -18,7 +22,7 @@ export type SimulationRecorder = {
     goalId: string;
     idempotencyKey: string;
     operation: string;
-    simulation: SimulationResult;
+    simulation: StoredSimulationEvidence;
   }): Promise<unknown>;
 };
 
@@ -45,7 +49,15 @@ export async function simulateAndRecord(
     goalId: request.goalId,
     idempotencyKey: `simulation:${request.orderUid}`,
     operation: "presign",
-    simulation: result,
+    simulation: toStoredSimulationEvidence(result),
   });
   return result;
+}
+
+function toStoredSimulationEvidence(
+  result: SimulationResult,
+): StoredSimulationEvidence {
+  return result.status === "simulated"
+    ? { status: result.status, gasEstimate: result.gasEstimate.toString() }
+    : result;
 }
