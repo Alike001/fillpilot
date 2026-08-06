@@ -1,9 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
+import { formatTokenAmount } from "@/domain/goal-draft";
 import styles from "./goal-timeline.module.css";
 
 type Goal = {
   id: string;
+  sellAmount: string;
+  preferredBuyAmount: string;
+  minimumBuyAmount: string;
   state: string;
   deadline: string;
   latestExecution?: {
@@ -15,6 +19,14 @@ type Goal = {
     createdAt: string;
   };
 };
+
+function formatAmount(value: string, decimals: number): string {
+  try {
+    return formatTokenAmount(BigInt(value), decimals);
+  } catch {
+    return value;
+  }
+}
 
 export function GoalTimeline({ goalId }: { goalId: string }) {
   const [goal, setGoal] = useState<Goal>();
@@ -84,6 +96,11 @@ export function GoalTimeline({ goalId }: { goalId: string }) {
           <strong>Goal saved</strong>
           <span>
             Draft · deadline {new Date(goal.deadline).toLocaleString()}
+          </span>
+          <span className={styles.intent}>
+            Sell {formatAmount(goal.sellAmount, 6)} USDC · target{" "}
+            {formatAmount(goal.preferredBuyAmount, 18)} WETH · floor{" "}
+            {formatAmount(goal.minimumBuyAmount, 18)} WETH
           </span>
         </div>
       </div>

@@ -32,6 +32,11 @@
   font-size: 12px;
   line-height: 1.5;
 }
+.intent {
+  color: var(--ink) !important;
+  font-family: var(--mono);
+  overflow-wrap: anywhere;
+}
 .receiptButton {
   width: fit-content;
   margin-top: 12px;

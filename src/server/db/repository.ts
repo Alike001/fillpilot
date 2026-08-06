@@ -72,6 +72,7 @@ export async function readGoalForWallet(goalId: string, walletAddress: string) {
       .select({
         id: goals.id,
         sellAmount: goals.sellAmount,
+        preferredBuyAmount: goals.preferredBuyAmount,
         minimumBuyAmount: goals.minimumBuyAmount,
         deadline: goals.deadline,
         state: goals.state,
@@ -102,6 +103,7 @@ export async function listGoalHistoryForWallet(walletAddress: string) {
       .select({
         id: goals.id,
         sellAmount: goals.sellAmount,
+        preferredBuyAmount: goals.preferredBuyAmount,
         minimumBuyAmount: goals.minimumBuyAmount,
         deadline: goals.deadline,
         state: goals.state,
@@ -125,6 +127,7 @@ export async function listGoalHistoryForWallet(walletAddress: string) {
       {
         id: string;
         sellAmount: string;
+        preferredBuyAmount: string;
         minimumBuyAmount: string;
         deadline: Date;
         state: string;
@@ -145,6 +148,7 @@ export async function listGoalHistoryForWallet(walletAddress: string) {
         byGoal.set(row.id, {
           id: row.id,
           sellAmount: row.sellAmount,
+          preferredBuyAmount: row.preferredBuyAmount,
           minimumBuyAmount: row.minimumBuyAmount,
           deadline: row.deadline,
           state: row.state,
