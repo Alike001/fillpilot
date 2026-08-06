@@ -16,6 +16,14 @@ const optionalEncryptionKey = z.preprocess(
     .optional(),
 );
 
+const optionalKeeperHubApiKey = z.preprocess(
+  (value) => (value === "" ? undefined : value),
+  z
+    .string()
+    .regex(/^kh_[A-Za-z0-9_-]+$/, "KEEPERHUB_API_KEY must start with kh_")
+    .optional(),
+);
+
 export const serverEnvSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
@@ -24,6 +32,7 @@ export const serverEnvSchema = z.object({
   TEST_DATABASE_URL: optionalUrl,
   APP_URL: z.url().default("http://127.0.0.1:3000"),
   KEEPERHUB_MCP_URL: z.url().default("https://app.keeperhub.com/mcp"),
+  KEEPERHUB_API_KEY: optionalKeeperHubApiKey,
   TOKEN_ENCRYPTION_KEY: optionalEncryptionKey,
 });
 
@@ -49,4 +58,13 @@ export function requireDatabaseUrl(env = parseServerEnv()): string {
   }
 
   return env.DATABASE_URL;
+}
+
+export function requireKeeperHubApiKey(env = parseServerEnv()): string {
+  if (!env.KEEPERHUB_API_KEY) {
+    throw new Error(
+      "KEEPERHUB_API_KEY is required for KeeperHub direct API requests",
+    );
+  }
+  return env.KEEPERHUB_API_KEY;
 }

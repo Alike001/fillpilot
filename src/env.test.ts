@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { parseServerEnv, requireDatabaseUrl } from "./env";
+import {
+  parseServerEnv,
+  requireDatabaseUrl,
+  requireKeeperHubApiKey,
+} from "./env";
 
 describe("server environment", () => {
   it("accepts an empty optional encryption key", () => {
@@ -48,5 +52,17 @@ describe("server environment", () => {
         }),
       ),
     ).toThrow(/TEST_DATABASE_URL/);
+  });
+
+  it("accepts a KeeperHub API key only in server configuration", () => {
+    const env = parseServerEnv({ KEEPERHUB_API_KEY: "kh_test_123" });
+
+    expect(requireKeeperHubApiKey(env)).toBe("kh_test_123");
+    expect(() => parseServerEnv({ KEEPERHUB_API_KEY: "not-a-key" })).toThrow(
+      /must start with kh_/,
+    );
+    expect(() => requireKeeperHubApiKey(parseServerEnv({}))).toThrow(
+      /KEEPERHUB_API_KEY/,
+    );
   });
 });
