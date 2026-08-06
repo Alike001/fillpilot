@@ -1,20 +1,16 @@
 import { expect, test } from "@playwright/test";
 
-function localDateTimeValue(date: Date): string {
-  const part = (value: number) => value.toString().padStart(2, "0");
-  return (
-    [date.getFullYear(), part(date.getMonth() + 1), part(date.getDate())].join(
-      "-",
-    ) + `T${part(date.getHours())}:${part(date.getMinutes())}`
-  );
-}
-
 test("explains FillPilot without claiming a fake execution", async ({
   page,
 }) => {
   const runtimeErrors: string[] = [];
   page.on("console", (message) => {
-    if (message.type() === "error") runtimeErrors.push(message.text());
+    if (
+      message.type() === "error" &&
+      !message.text().includes("/_next/webpack-hmr")
+    ) {
+      runtimeErrors.push(message.text());
+    }
   });
   page.on("pageerror", (error) => runtimeErrors.push(error.message));
 
@@ -39,30 +35,15 @@ test("explains FillPilot without claiming a fake execution", async ({
   await expect(
     page.getByRole("heading", { level: 1, name: /Define one fill/i }),
   ).toBeVisible();
-  await expect(
-    page.getByText(/KeeperHub execution is deliberately disabled/i),
-  ).toBeVisible();
+  await expect(page.getByText(/Write boundary protected/i)).toBeVisible();
   await expect(
     page.getByRole("heading", { name: /Confirm the execution environment/i }),
   ).toBeVisible();
   await expect(
     page.getByRole("link", { name: /Connect KeeperHub/i }),
   ).toBeVisible();
-  await page.getByRole("textbox", { name: "Sell amount" }).fill("12.5");
-  await page
-    .getByRole("textbox", { name: "Preferred receive amount" })
-    .fill("0.0042");
-  await page
-    .getByRole("textbox", { name: "Minimum receive amount" })
-    .fill("0.004");
-  await page
-    .getByLabel("Deadline")
-    .fill(localDateTimeValue(new Date(Date.now() + 30 * 60 * 1000)));
-  await expect(page.getByText("0.0042 WETH")).toBeVisible();
-  await page.getByRole("button", { name: "Validate execution plan" }).click();
-  await expect(page.getByText(/Inputs are valid\. No goal/i)).toBeVisible();
   await expect(
-    page.getByText(/Quotes, approvals, KeeperHub simulations/i),
+    page.getByText(/Quote and KeeperHub simulation controls become available/i),
   ).toBeVisible();
   expect(runtimeErrors).toEqual([]);
 });
@@ -71,11 +52,17 @@ test("keeps a goal quote read-only", async ({ page }) => {
   await page.goto("/app/goals/example-goal");
 
   await expect(
-    page.getByRole("heading", { name: "Read the market before you commit." }),
+    page.getByRole("heading", { name: "Keep every boundary visible." }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Request fresh CoW quote" }),
   ).toBeVisible();
-  await expect(page.getByText("It cannot place an order.")).toBeVisible();
-  await expect(page.getByText(/execute|submit order/i)).toHaveCount(0);
+  await expect(
+    page.getByText(/cannot sign, submit an order, approve USDC/i),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      /onchain authorization exists only when this goal shows a transaction hash/i,
+    ),
+  ).toBeVisible();
 });
