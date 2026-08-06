@@ -1,9 +1,10 @@
 import { createHash } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 import { validateGoalDraft, type GoalDraftInput } from "@/domain/goal-draft";
 import { encryptSecret } from "@/server/connections/crypto";
 import type { ConnectionAuthState } from "@/server/connections/mcp-oauth";
+import type { ReconciledExecution } from "@/server/integrations/keeperhub-execution-reconciliation";
 
 import { createDatabase } from "./client";
 import { connections, goals, keeperhubExecutions } from "./schema";
@@ -114,6 +115,76 @@ export async function recordSimulationEvidence(input: {
       .returning({
         id: keeperhubExecutions.id,
         state: keeperhubExecutions.state,
+      });
+    return record;
+  } finally {
+    await client.end();
+  }
+}
+
+export async function recordSubmittedExecution(input: {
+  goalId: string;
+  idempotencyKey: string;
+  operation: string;
+  simulation: unknown;
+  executionId: string;
+}) {
+  const { client, db } = createDatabase();
+  try {
+    const [record] = await db
+      .insert(keeperhubExecutions)
+      .values({
+        goalId: input.goalId,
+        idempotencyKey: input.idempotencyKey,
+        operation: input.operation,
+        simulation: input.simulation,
+        executionId: input.executionId,
+        state: "SUBMITTED",
+      })
+      .onConflictDoNothing({
+        target: keeperhubExecutions.idempotencyKey,
+      })
+      .returning({
+        id: keeperhubExecutions.id,
+        executionId: keeperhubExecutions.executionId,
+        state: keeperhubExecutions.state,
+      });
+    return record;
+  } finally {
+    await client.end();
+  }
+}
+
+/**
+ * Persist only a status read that belongs to an execution FillPilot previously
+ * recorded. This cannot create an execution row or turn a terminal row back
+ * into a submitted one.
+ */
+export async function applyExecutionReconciliation(input: ReconciledExecution) {
+  const { client, db } = createDatabase();
+  try {
+    const [record] = await db
+      .update(keeperhubExecutions)
+      .set({
+        state: input.state,
+        transactionHash:
+          input.state === "CONFIRMED" ? input.transactionHash : undefined,
+        transactionLink:
+          input.state === "CONFIRMED" ? input.transactionLink : undefined,
+        gasUsed: input.state === "CONFIRMED" ? input.gasUsedWei : undefined,
+        error: input.state === "FAILED" ? input.error : undefined,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(keeperhubExecutions.executionId, input.executionId),
+          inArray(keeperhubExecutions.state, ["SIMULATED", "SUBMITTED"]),
+        ),
+      )
+      .returning({
+        id: keeperhubExecutions.id,
+        state: keeperhubExecutions.state,
+        transactionHash: keeperhubExecutions.transactionHash,
       });
     return record;
   } finally {

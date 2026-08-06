@@ -3,7 +3,9 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { decryptSecret } from "../../src/server/connections/crypto";
 import {
+  applyExecutionReconciliation,
   recordSimulationEvidence,
+  recordSubmittedExecution,
   saveDraftGoal,
 } from "../../src/server/db/repository";
 
@@ -89,6 +91,65 @@ describeWithDatabase("draft goal persistence", () => {
       { count: string }[]
     >`select count(*) from keeperhub_executions where goal_id = ${saved.id}`;
     expect(count).toBe("1");
+    await client!`delete from goals where id = ${saved.id}`;
+    await client!`delete from connections where wallet_address = ${walletAddress}`;
+  });
+
+  it("reconciles only the FillPilot execution record with matching evidence", async () => {
+    const walletAddress = "0x3333333333333333333333333333333333333333" as const;
+    const saved = await saveDraftGoal(
+      {
+        walletAddress,
+        tokens: { access_token: "test-token", token_type: "Bearer" },
+      },
+      {
+        sellAmount: "1",
+        preferredBuyAmount: "0.002",
+        minimumBuyAmount: "0.001",
+        deadline: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      },
+    );
+    const executionId = "direct_fillpilot_test_1";
+    const submission = {
+      goalId: saved.id,
+      idempotencyKey: `execution:${saved.id}`,
+      operation: "presign",
+      executionId,
+      simulation: { status: "simulated", gasEstimate: "65000" },
+    };
+    await recordSubmittedExecution(submission);
+    await recordSubmittedExecution(submission);
+
+    await expect(
+      applyExecutionReconciliation({
+        state: "CONFIRMED",
+        executionId,
+        transactionHash: `0x${"ab".repeat(32)}`,
+        transactionLink: "https://base.blockscout.com/tx/proof",
+        gasUsedWei: "42000",
+      }),
+    ).resolves.toMatchObject({ state: "CONFIRMED" });
+    await expect(
+      applyExecutionReconciliation({
+        state: "FAILED",
+        executionId,
+        error: "late status must not overwrite confirmed proof",
+      }),
+    ).resolves.toBeUndefined();
+
+    const [row] = await client!<
+      { state: string; transaction_hash: string; count: string }[]
+    >`
+      select state, transaction_hash,
+        (select count(*) from keeperhub_executions where goal_id = ${saved.id}) as count
+      from keeperhub_executions
+      where execution_id = ${executionId}
+    `;
+    expect(row).toMatchObject({
+      state: "CONFIRMED",
+      transaction_hash: `0x${"ab".repeat(32)}`,
+      count: "1",
+    });
     await client!`delete from goals where id = ${saved.id}`;
     await client!`delete from connections where wallet_address = ${walletAddress}`;
   });
