@@ -5,9 +5,10 @@ import { validateGoalDraft, type GoalDraftInput } from "@/domain/goal-draft";
 import { encryptSecret } from "@/server/connections/crypto";
 import type { ConnectionAuthState } from "@/server/connections/mcp-oauth";
 import type { ReconciledExecution } from "@/server/integrations/keeperhub-execution-reconciliation";
+import type { CheckpointWork } from "@/worker/checkpoint-work";
 
 import { createDatabase } from "./client";
-import { connections, goals, keeperhubExecutions } from "./schema";
+import { connections, goals, keeperhubExecutions, workItems } from "./schema";
 
 const BASE_USDC = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 const BASE_WETH = "0x4200000000000000000000000000000000000006";
@@ -199,6 +200,29 @@ export async function recordSimulationEvidence(input: {
         id: keeperhubExecutions.id,
         state: keeperhubExecutions.state,
       });
+    return record;
+  } finally {
+    await client.end();
+  }
+}
+
+/**
+ * Persisting a checkpoint does not make a goal executable. A later approved
+ * authorization flow will call this after it has moved a goal into WATCHING.
+ */
+export async function enqueueCheckpointWork(input: CheckpointWork) {
+  const { client, db } = createDatabase();
+  try {
+    const [record] = await db
+      .insert(workItems)
+      .values({
+        goalId: input.goalId,
+        kind: input.kind,
+        deduplicationKey: input.deduplicationKey,
+        dueAt: input.dueAt,
+      })
+      .onConflictDoNothing({ target: workItems.deduplicationKey })
+      .returning({ id: workItems.id, state: workItems.state });
     return record;
   } finally {
     await client.end();
