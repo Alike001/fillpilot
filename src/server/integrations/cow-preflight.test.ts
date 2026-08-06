@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { OrderQuoteResponse } from "@cowprotocol/sdk-order-book";
 
-import { getCowPreflight, validateCowPreflight } from "./cow-preflight";
+import {
+  getCowPreflight,
+  getValidatedCowQuote,
+  validateCowPreflight,
+} from "./cow-preflight";
 
 const NOW = new Date("2026-08-05T12:00:00.000Z");
 const INPUT = {
@@ -83,6 +87,21 @@ describe("CoW preflight", () => {
       validTo: Math.floor(INPUT.deadline.getTime() / 1000),
       verified: true,
     });
+  });
+
+  it("returns the validated raw quote only after applying the same checks", async () => {
+    const quote = response();
+    await expect(
+      getValidatedCowQuote(
+        INPUT,
+        {
+          async getQuote() {
+            return quote;
+          },
+        },
+        NOW,
+      ),
+    ).resolves.toBe(quote);
   });
 
   it.each([

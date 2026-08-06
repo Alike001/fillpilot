@@ -44,7 +44,7 @@ async function collect(directory) {
     if (entry.isDirectory()) files.push(...(await collect(path)));
     else if (
       textExtensions.has(extname(entry.name)) ||
-      entry.name.startsWith(".env")
+      entry.name === ".env.example"
     )
       files.push(path);
   }

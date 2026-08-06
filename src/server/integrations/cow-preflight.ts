@@ -42,6 +42,20 @@ export async function getCowPreflight(
   api = createCowQuoteApi(),
   now = new Date(),
 ): Promise<CowPreflight> {
+  const response = await getValidatedCowQuote(input, api, now);
+  return validateCowPreflight(
+    response,
+    input,
+    Math.floor(input.deadline.getTime() / 1000),
+    now,
+  );
+}
+
+export async function getValidatedCowQuote(
+  input: CowPreflightInput,
+  api = createCowQuoteApi(),
+  now = new Date(),
+): Promise<OrderQuoteResponse> {
   const validTo = Math.floor(input.deadline.getTime() / 1000);
   if (
     !Number.isSafeInteger(validTo) ||
@@ -62,7 +76,8 @@ export async function getCowPreflight(
     signingScheme: SigningScheme.PRESIGN,
   } satisfies OrderQuoteRequest);
 
-  return validateCowPreflight(response, input, validTo, now);
+  validateCowPreflight(response, input, validTo, now);
+  return response;
 }
 
 export function validateCowPreflight(

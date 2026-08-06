@@ -2,8 +2,10 @@
 import { useState } from "react";
 export function GoalPreflight({ goalId }: { goalId: string }) {
   const [message, setMessage] = useState("No quote requested.");
+  const [quoteEligible, setQuoteEligible] = useState(false);
   async function requestQuote() {
     setMessage("Reading quote…");
+    setQuoteEligible(false);
     try {
       const response = await fetch(`/api/goals/${goalId}/preflight`);
       const body = (await response.json()) as {
@@ -11,13 +13,47 @@ export function GoalPreflight({ goalId }: { goalId: string }) {
         error?: string;
         boundary?: string;
       };
-      setMessage(
-        response.ok
-          ? `Floor is met: ${body.buyAmount} wei WETH. ${body.boundary}`
-          : (body.error ?? "Quote unavailable."),
-      );
+      if (response.ok) {
+        setQuoteEligible(true);
+        setMessage(
+          `Floor is met: ${body.buyAmount} wei WETH. ${body.boundary}`,
+        );
+      } else {
+        setMessage(body.error ?? "Quote unavailable.");
+      }
     } catch {
       setMessage("FillPilot could not reach the quote route.");
+    }
+  }
+
+  async function simulatePresignature() {
+    setMessage("KeeperHub is simulating the exact pre-signature call…");
+    try {
+      const response = await fetch(`/api/goals/${goalId}/presign-simulation`, {
+        method: "POST",
+      });
+      const body = (await response.json()) as {
+        orderUid?: string;
+        simulation?:
+          | { status: "simulated"; gasEstimate: string }
+          | {
+              status: "rejected";
+              reason: string;
+            };
+        error?: string;
+        boundary?: string;
+      };
+      if (!response.ok || !body.simulation) {
+        setMessage(body.error ?? "Simulation unavailable.");
+        return;
+      }
+      setMessage(
+        body.simulation.status === "simulated"
+          ? `Simulated: ${body.simulation.gasEstimate} gas. Order UID ${body.orderUid}. ${body.boundary}`
+          : `Simulation rejected: ${body.simulation.reason}. ${body.boundary}`,
+      );
+    } catch {
+      setMessage("FillPilot could not reach the simulation route.");
     }
   }
   return (
@@ -27,6 +63,17 @@ export function GoalPreflight({ goalId }: { goalId: string }) {
       <button onClick={requestQuote} type="button">
         Request fresh CoW quote
       </button>
+      <button
+        disabled={!quoteEligible}
+        onClick={simulatePresignature}
+        type="button"
+      >
+        Simulate CoW pre-signature with KeeperHub
+      </button>
+      <p>
+        This checks the exact Base contract call. It cannot sign, submit an
+        order, approve USDC, or send a transaction.
+      </p>
       <p aria-live="polite" role="status">
         {message}
       </p>
