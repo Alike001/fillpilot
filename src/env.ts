@@ -36,6 +36,14 @@ export function parseServerEnv(
 }
 
 export function requireDatabaseUrl(env = parseServerEnv()): string {
+  if (env.NODE_ENV === "test") {
+    if (!env.TEST_DATABASE_URL) {
+      throw new Error(
+        "TEST_DATABASE_URL is required for database operations in tests",
+      );
+    }
+    return env.TEST_DATABASE_URL;
+  }
   if (!env.DATABASE_URL) {
     throw new Error("DATABASE_URL is required for database operations");
   }

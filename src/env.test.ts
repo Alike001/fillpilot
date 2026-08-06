@@ -26,4 +26,27 @@ describe("server environment", () => {
       /DATABASE_URL/,
     );
   });
+
+  it("uses the isolated test database instead of DATABASE_URL", () => {
+    expect(
+      requireDatabaseUrl(
+        parseServerEnv({
+          NODE_ENV: "test",
+          DATABASE_URL: "postgres://app:app@127.0.0.1:5432/fillpilot",
+          TEST_DATABASE_URL: "postgres://app:app@127.0.0.1:5432/fillpilot_test",
+        }),
+      ),
+    ).toBe("postgres://app:app@127.0.0.1:5432/fillpilot_test");
+  });
+
+  it("refuses to use the development database in test mode", () => {
+    expect(() =>
+      requireDatabaseUrl(
+        parseServerEnv({
+          NODE_ENV: "test",
+          DATABASE_URL: "postgres://app:app@127.0.0.1:5432/fillpilot",
+        }),
+      ),
+    ).toThrow(/TEST_DATABASE_URL/);
+  });
 });
