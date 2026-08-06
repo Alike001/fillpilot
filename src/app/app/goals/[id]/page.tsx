@@ -13,6 +13,8 @@ export default async function GoalDetailPage({
       eyebrow="Goal atlas"
       title="Keep every boundary visible."
       body="This timeline separates your goal, CoW quote evidence, KeeperHub execution evidence, and any eventual economic outcome."
+      backHref="/app/goals"
+      backLabel="← All saved goals"
       identifier={id}
     >
       <GoalTimeline goalId={id} />

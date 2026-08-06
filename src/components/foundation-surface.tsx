@@ -9,6 +9,8 @@ type FoundationSurfaceProps = {
   title: string;
   body: string;
   identifier?: string;
+  backHref?: string;
+  backLabel?: string;
   children?: ReactNode;
 };
 
@@ -17,6 +19,8 @@ export function FoundationSurface({
   title,
   body,
   identifier,
+  backHref = "/",
+  backLabel = "← Return to product overview",
   children,
 }: FoundationSurfaceProps) {
   return (
@@ -43,8 +47,8 @@ export function FoundationSurface({
           </div>
         </div>
         {children}
-        <Link className={styles.back} href="/">
-          ← Return to product overview
+        <Link className={styles.back} href={backHref}>
+          {backLabel}
         </Link>
       </section>
     </main>
