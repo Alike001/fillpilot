@@ -1,4 +1,4 @@
-import { encodeFunctionData, type Address } from "viem";
+import { encodeFunctionData } from "viem";
 
 import type {
   KeeperHubSimulator,
