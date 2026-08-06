@@ -26,6 +26,10 @@ export function ConnectionDoctor() {
 
   const connected =
     checks?.find((check) => check.id === "connection")?.state === "ready";
+  // A callback may be replayed after a prior authorization has already
+  // completed. In that case the returned OAuth state is intentionally stale,
+  // but the server-held connection is still the source of truth.
+  const showConnectionFailure = connectionFailed && connected === false;
 
   return (
     <section className={styles.panel} aria-labelledby="connection-doctor-title">
@@ -44,7 +48,7 @@ export function ConnectionDoctor() {
         FillPilot can inspect KeeperHub, Base, and CoW readiness here. This step
         cannot send a transaction.
       </p>
-      {connectionFailed ? (
+      {showConnectionFailure ? (
         <p className={styles.error} role="alert">
           KeeperHub approved the request, but FillPilot could not complete the
           secure token exchange. Reason:{" "}
