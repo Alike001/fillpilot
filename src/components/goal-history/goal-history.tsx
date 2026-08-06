@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { formatTokenAmount } from "@/domain/goal-draft";
 import styles from "./goal-history.module.css";
 
 type Goal = {
@@ -12,6 +13,14 @@ type Goal = {
   state: string;
   latestExecution?: { state: string; simulation?: { gasEstimate?: string } };
 };
+
+function formatAmount(value: string, decimals: number): string {
+  try {
+    return formatTokenAmount(BigInt(value), decimals);
+  } catch {
+    return value;
+  }
+}
 
 export function GoalHistory() {
   const [state, setState] = useState<{ goals?: Goal[]; error?: string }>({});
@@ -47,20 +56,20 @@ export function GoalHistory() {
           href={`/app/goals/${goal.id}`}
           key={goal.id}
         >
-          <div>
-            <strong>USDC → WETH</strong>
+          <div className={styles.intent}>
+            <span className={styles.index}>Goal {goal.id.slice(0, 8)}</span>
+            <strong>{formatAmount(goal.sellAmount, 6)} USDC → WETH</strong>
             <span>
-              {goal.sellAmount} atomic USDC · floor {goal.minimumBuyAmount} wei
-              WETH
+              Protected floor {formatAmount(goal.minimumBuyAmount, 18)} WETH
             </span>
           </div>
           <div>
-            <small>Goal</small>
-            <b>{goal.state}</b>
+            <small>Lifecycle</small>
+            <b className={styles.state}>{goal.state.toLowerCase()}</b>
           </div>
           <div>
             <small>KeeperHub</small>
-            <b>
+            <b className={goal.latestExecution ? styles.evidence : undefined}>
               {goal.latestExecution
                 ? `${goal.latestExecution.state}${goal.latestExecution.simulation?.gasEstimate ? ` · ${goal.latestExecution.simulation.gasEstimate} gas` : ""}`
                 : "Not simulated"}
@@ -69,6 +78,7 @@ export function GoalHistory() {
           <div>
             <small>Deadline</small>
             <b>{new Date(goal.deadline).toLocaleString()}</b>
+            <span className={styles.outcome}>No onchain authorization yet</span>
           </div>
         </Link>
       ))}
