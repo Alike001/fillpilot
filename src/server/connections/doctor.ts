@@ -122,12 +122,31 @@ function balanceCheck(
     };
   }
 
-  return current >= minimum
-    ? { id, label, state: "ready", detail: "Read-only check passed." }
-    : {
-        id,
-        label,
-        state: "attention",
-        detail: "Below the minimum needed for the selected goal.",
-      };
+  if (current >= minimum) {
+    return { id, label, state: "ready", detail: "Read-only check passed." };
+  }
+
+  if (id === "usdc" && current === 0n) {
+    return {
+      id,
+      label,
+      state: "attention",
+      detail: "No USDC is available in the organization wallet.",
+    };
+  }
+  if (id === "allowance" && current === 0n) {
+    return {
+      id,
+      label,
+      state: "attention",
+      detail: "No USDC allowance for CoW is available yet.",
+    };
+  }
+
+  return {
+    id,
+    label,
+    state: "attention",
+    detail: "Below the amount needed for the selected goal.",
+  };
 }

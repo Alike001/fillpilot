@@ -62,6 +62,27 @@ describe("connection doctor", () => {
     });
     expect(checks.find((check) => check.id === "allowance")).toMatchObject({
       state: "attention",
+      detail: "Below the amount needed for the selected goal.",
+    });
+  });
+
+  it("explains when the organization wallet has no USDC or CoW allowance", () => {
+    const checks = buildConnectionDoctor({
+      connection: "connected",
+      walletAddress: "0x1111111111111111111111111111111111111111",
+      chainId: 8453,
+      nativeGasWei: 100_000_000_000_000n,
+      usdcBalance: 0n,
+      allowance: 0n,
+    });
+
+    expect(checks.find((check) => check.id === "usdc")).toMatchObject({
+      state: "attention",
+      detail: "No USDC is available in the organization wallet.",
+    });
+    expect(checks.find((check) => check.id === "allowance")).toMatchObject({
+      state: "attention",
+      detail: "No USDC allowance for CoW is available yet.",
     });
   });
 
