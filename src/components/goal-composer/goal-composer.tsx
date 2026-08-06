@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 
 import {
   formatTokenAmount,
@@ -20,6 +21,7 @@ const INITIAL_INPUT: GoalDraftInput = {
 export function GoalComposer() {
   const [input, setInput] = useState<GoalDraftInput>(INITIAL_INPUT);
   const [submitted, setSubmitted] = useState(false);
+  const [savedGoalId, setSavedGoalId] = useState<string>();
   const [saveStatus, setSaveStatus] = useState<string>();
 
   const validation = useMemo(() => {
@@ -36,6 +38,7 @@ export function GoalComposer() {
 
   function update(field: keyof GoalDraftInput, value: string) {
     setSubmitted(false);
+    setSavedGoalId(undefined);
     setSaveStatus(undefined);
     setInput((current) => ({ ...current, [field]: value }));
   }
@@ -146,11 +149,14 @@ export function GoalComposer() {
                   error?: string;
                   id?: string;
                 };
-                setSaveStatus(
-                  response.ok && body.id
-                    ? `Draft saved: ${body.id}. No order or transaction was created.`
-                    : (body.error ?? "Could not save draft."),
-                );
+                if (response.ok && body.id) {
+                  setSavedGoalId(body.id);
+                  setSaveStatus(
+                    "Draft saved. No order or transaction was created.",
+                  );
+                } else {
+                  setSaveStatus(body.error ?? "Could not save draft.");
+                }
               } catch {
                 setSaveStatus(
                   "Could not reach FillPilot. Your goal was not saved.",
@@ -169,6 +175,14 @@ export function GoalComposer() {
                   ? validation.error
                   : "Validation is local and exact-value only.")}
           </p>
+          {savedGoalId ? (
+            <Link
+              className={styles.openGoal}
+              href={`/app/goals/${savedGoalId}`}
+            >
+              Open saved goal
+            </Link>
+          ) : null}
         </form>
 
         <aside className={styles.preview} aria-live="polite">
@@ -214,8 +228,9 @@ export function GoalComposer() {
           <div className={styles.boundary}>
             <strong>Current boundary</strong>
             <p>
-              This slice validates intent only. Quotes, approvals, KeeperHub
-              simulations, CoW orders, and Base transactions remain disabled.
+              This screen only saves a draft. Quote and KeeperHub simulation
+              controls become available from its saved goal page. No order,
+              approval, or transaction is created here.
             </p>
           </div>
         </aside>

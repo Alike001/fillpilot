@@ -142,6 +142,22 @@
   line-height: 1.5;
 }
 
+.openGoal {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--info);
+  padding: 0 14px;
+  color: var(--info);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.openGoal:hover {
+  background: color-mix(in srgb, var(--info) 8%, transparent);
+}
+
 .preview {
   background: var(--surface-subtle);
 }
