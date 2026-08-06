@@ -8,6 +8,8 @@ export type KeeperHubExecutionSnapshot = {
   readonly transactionLink?: string;
   readonly gasUsedWei?: string;
   readonly error?: unknown;
+  /** KeeperHub's X-Poll-Interval-Hint converted from seconds to milliseconds. */
+  readonly pollAfterMs?: number;
 };
 
 export type KeeperHubExecutionReader = {
@@ -55,7 +57,7 @@ export async function reconcileKeeperHubExecution(
     return {
       state: "SUBMITTED",
       executionId,
-      retryAfterMs: PENDING_POLL_MS,
+      retryAfterMs: snapshot.pollAfterMs ?? PENDING_POLL_MS,
     };
   }
   if (snapshot.status === "failed") {
