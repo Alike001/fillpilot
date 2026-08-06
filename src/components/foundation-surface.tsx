@@ -34,10 +34,11 @@ export function FoundationSurface({
         <div className={styles.notice} role="status">
           <span aria-hidden="true">○</span>
           <div>
-            <strong>Foundation milestone</strong>
+            <strong>Write boundary protected</strong>
             <p>
-              KeeperHub execution is deliberately disabled. Nothing on this
-              screen is a mock transaction or proof.
+              Quotes and KeeperHub simulations can be recorded here. A real
+              onchain authorization exists only when this goal shows a
+              transaction hash.
             </p>
           </div>
         </div>

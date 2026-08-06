@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import styles from "./goal-preflight.module.css";
 export function GoalPreflight({ goalId }: { goalId: string }) {
   const [message, setMessage] = useState("No quote requested.");
   const [quoteEligible, setQuoteEligible] = useState(false);
@@ -57,24 +58,32 @@ export function GoalPreflight({ goalId }: { goalId: string }) {
     }
   }
   return (
-    <section>
-      <h2>Inspect a fresh CoW quote.</h2>
-      <p>Checks your saved WETH floor. It cannot place an order.</p>
-      <button onClick={requestQuote} type="button">
-        Request fresh CoW quote
-      </button>
-      <button
-        disabled={!quoteEligible}
-        onClick={simulatePresignature}
-        type="button"
-      >
-        Simulate CoW pre-signature with KeeperHub
-      </button>
-      <p>
+    <section className={styles.section}>
+      <div className={styles.heading}>
+        <div>
+          <h2>Inspect a fresh CoW quote.</h2>
+          <p>Check the saved WETH floor before doing anything else.</p>
+        </div>
+        <span className={styles.label}>Read + simulate only</span>
+      </div>
+      <div className={styles.controls}>
+        <button className={styles.button} onClick={requestQuote} type="button">
+          Request fresh CoW quote
+        </button>
+        <button
+          className={styles.button}
+          disabled={!quoteEligible}
+          onClick={simulatePresignature}
+          type="button"
+        >
+          Simulate CoW pre-signature with KeeperHub
+        </button>
+      </div>
+      <p className={styles.boundary}>
         This checks the exact Base contract call. It cannot sign, submit an
         order, approve USDC, or send a transaction.
       </p>
-      <p aria-live="polite" role="status">
+      <p aria-live="polite" className={styles.result} role="status">
         {message}
       </p>
     </section>
