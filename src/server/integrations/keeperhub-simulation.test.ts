@@ -61,7 +61,11 @@ describe("KeeperHub simulation boundary", () => {
 
     expect(record).toHaveBeenCalledWith(
       expect.objectContaining({
-        simulation: { status: "simulated", gasEstimate: "65000" },
+        simulation: {
+          status: "simulated",
+          gasEstimate: "65000",
+          orderUid: REQUEST.orderUid,
+        },
       }),
     );
   });

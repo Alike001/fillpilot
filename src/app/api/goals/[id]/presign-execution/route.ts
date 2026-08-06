@@ -90,6 +90,7 @@ export async function POST(
       operation: "presign",
       simulation: {
         gasEstimate: simulation.gasEstimate.toString(),
+        orderUid: order.uid,
         status: "simulated",
       },
     });

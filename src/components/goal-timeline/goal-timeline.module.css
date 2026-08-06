@@ -53,6 +53,10 @@
   font-family: var(--mono);
   overflow-wrap: anywhere;
 }
+.uid {
+  font-family: var(--mono);
+  overflow-wrap: anywhere;
+}
 .empty {
   margin: 28px 0;
   color: var(--muted);

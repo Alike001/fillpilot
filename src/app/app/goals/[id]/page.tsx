@@ -1,3 +1,4 @@
+import { AuthorizationReview } from "@/components/authorization-review/authorization-review";
 import { FoundationSurface } from "@/components/foundation-surface";
 import { GoalPreflight } from "@/components/goal-preflight/goal-preflight";
 import { GoalTimeline } from "@/components/goal-timeline/goal-timeline";
@@ -16,6 +17,7 @@ export default async function GoalDetailPage({
     >
       <GoalTimeline goalId={id} />
       <GoalPreflight goalId={id} />
+      <AuthorizationReview goalId={id} />
     </FoundationSurface>
   );
 }

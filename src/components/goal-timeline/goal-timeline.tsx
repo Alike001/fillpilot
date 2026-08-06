@@ -9,7 +9,7 @@ type Goal = {
   latestExecution?: {
     state: string;
     executionId?: string;
-    simulation?: { gasEstimate?: string };
+    simulation?: { gasEstimate?: string; orderUid?: string };
     transactionHash?: string;
     transactionLink?: string;
     createdAt: string;
@@ -105,6 +105,11 @@ export function GoalTimeline({ goalId }: { goalId: string }) {
               ? `${gas} gas · simulation only`
               : "No execution evidence yet."}
           </span>
+          {execution?.simulation?.orderUid ? (
+            <span className={styles.uid}>
+              UID {execution.simulation.orderUid}
+            </span>
+          ) : null}
           {execution?.executionId ? (
             <button
               className={styles.receiptButton}
