@@ -6,6 +6,7 @@ import {
   applyExecutionReconciliation,
   recordSimulationEvidence,
   recordSubmittedExecution,
+  readExecutionForWallet,
   saveDraftGoal,
 } from "../../src/server/db/repository";
 
@@ -120,8 +121,15 @@ describeWithDatabase("draft goal persistence", () => {
     await recordSubmittedExecution(submission);
     await recordSubmittedExecution(submission);
 
+    const stored = await readExecutionForWallet({
+      goalId: saved.id,
+      executionId,
+      walletAddress,
+    });
+    expect(stored).toMatchObject({ executionId, state: "SUBMITTED" });
+
     await expect(
-      applyExecutionReconciliation({
+      applyExecutionReconciliation(stored!.id, {
         state: "CONFIRMED",
         executionId,
         transactionHash: `0x${"ab".repeat(32)}`,
@@ -130,7 +138,7 @@ describeWithDatabase("draft goal persistence", () => {
       }),
     ).resolves.toMatchObject({ state: "CONFIRMED" });
     await expect(
-      applyExecutionReconciliation({
+      applyExecutionReconciliation(stored!.id, {
         state: "FAILED",
         executionId,
         error: "late status must not overwrite confirmed proof",

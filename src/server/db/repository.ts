@@ -160,7 +160,43 @@ export async function recordSubmittedExecution(input: {
  * recorded. This cannot create an execution row or turn a terminal row back
  * into a submitted one.
  */
-export async function applyExecutionReconciliation(input: ReconciledExecution) {
+export async function readExecutionForWallet(input: {
+  goalId: string;
+  executionId: string;
+  walletAddress: string;
+}) {
+  const fingerprint = createHash("sha256")
+    .update(input.walletAddress.toLowerCase())
+    .digest("hex");
+  const { client, db } = createDatabase();
+  try {
+    const [record] = await db
+      .select({
+        id: keeperhubExecutions.id,
+        executionId: keeperhubExecutions.executionId,
+        state: keeperhubExecutions.state,
+      })
+      .from(keeperhubExecutions)
+      .innerJoin(goals, eq(keeperhubExecutions.goalId, goals.id))
+      .innerJoin(connections, eq(goals.connectionId, connections.id))
+      .where(
+        and(
+          eq(keeperhubExecutions.goalId, input.goalId),
+          eq(keeperhubExecutions.executionId, input.executionId),
+          eq(connections.organizationFingerprint, fingerprint),
+        ),
+      )
+      .limit(1);
+    return record;
+  } finally {
+    await client.end();
+  }
+}
+
+export async function applyExecutionReconciliation(
+  recordId: string,
+  input: ReconciledExecution,
+) {
   const { client, db } = createDatabase();
   try {
     const [record] = await db
@@ -177,6 +213,7 @@ export async function applyExecutionReconciliation(input: ReconciledExecution) {
       })
       .where(
         and(
+          eq(keeperhubExecutions.id, recordId),
           eq(keeperhubExecutions.executionId, input.executionId),
           inArray(keeperhubExecutions.state, ["SIMULATED", "SUBMITTED"]),
         ),
