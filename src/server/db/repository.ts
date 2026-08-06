@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { and, eq } from "drizzle-orm";
 
 import { validateGoalDraft, type GoalDraftInput } from "@/domain/goal-draft";
 import { encryptSecret } from "@/server/connections/crypto";
@@ -55,6 +56,36 @@ export async function saveDraftGoal(
         .returning({ id: goals.id });
       return goal;
     });
+  } finally {
+    await client.end();
+  }
+}
+
+export async function readGoalForWallet(goalId: string, walletAddress: string) {
+  const fingerprint = createHash("sha256")
+    .update(walletAddress.toLowerCase())
+    .digest("hex");
+  const { client, db } = createDatabase();
+  try {
+    const [goal] = await db
+      .select({
+        id: goals.id,
+        sellAmount: goals.sellAmount,
+        minimumBuyAmount: goals.minimumBuyAmount,
+        deadline: goals.deadline,
+        state: goals.state,
+        walletAddress: connections.walletAddress,
+      })
+      .from(goals)
+      .innerJoin(connections, eq(goals.connectionId, connections.id))
+      .where(
+        and(
+          eq(goals.id, goalId),
+          eq(connections.organizationFingerprint, fingerprint),
+        ),
+      )
+      .limit(1);
+    return goal;
   } finally {
     await client.end();
   }

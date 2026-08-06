@@ -1,4 +1,5 @@
 import { FoundationSurface } from "@/components/foundation-surface";
+import { GoalPreflight } from "@/components/goal-preflight/goal-preflight";
 
 export default async function GoalDetailPage({
   params,
@@ -8,9 +9,11 @@ export default async function GoalDetailPage({
   return (
     <FoundationSurface
       eyebrow="Goal atlas"
-      title="Goal evidence will live here."
-      body="A future verified goal will separate its user intent, CoW order, KeeperHub execution, and economic outcome instead of collapsing them into one success label."
+      title="Read the market before you commit."
+      body="A fresh verified CoW quote is evidence, not an order. FillPilot keeps that boundary explicit."
       identifier={id}
-    />
+    >
+      <GoalPreflight goalId={id} />
+    </FoundationSurface>
   );
 }

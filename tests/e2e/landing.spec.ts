@@ -66,3 +66,16 @@ test("explains FillPilot without claiming a fake execution", async ({
   ).toBeVisible();
   expect(runtimeErrors).toEqual([]);
 });
+
+test("keeps a goal quote read-only", async ({ page }) => {
+  await page.goto("/app/goals/example-goal");
+
+  await expect(
+    page.getByRole("heading", { name: "Read the market before you commit." }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Request fresh CoW quote" }),
+  ).toBeVisible();
+  await expect(page.getByText("It cannot place an order.")).toBeVisible();
+  await expect(page.getByText(/execute|submit order/i)).toHaveCount(0);
+});
