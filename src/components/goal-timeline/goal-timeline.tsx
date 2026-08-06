@@ -17,16 +17,33 @@ export function GoalTimeline({ goalId }: { goalId: string }) {
   const [goal, setGoal] = useState<Goal>();
   const [error, setError] = useState<string>();
   useEffect(() => {
-    void fetch("/api/goals/history")
-      .then(async (r) => ({
-        r,
-        b: (await r.json()) as { goals?: Goal[]; error?: string },
-      }))
-      .then(({ r, b }) => {
-        if (!r.ok) setError(b.error);
-        else setGoal(b.goals?.find((x) => x.id === goalId));
-      })
-      .catch(() => setError("Timeline unavailable."));
+    const load = () => {
+      void fetch("/api/goals/history")
+        .then(async (r) => ({
+          r,
+          b: (await r.json()) as { goals?: Goal[]; error?: string },
+        }))
+        .then(({ r, b }) => {
+          if (!r.ok) setError(b.error);
+          else {
+            setError(undefined);
+            setGoal(b.goals?.find((x) => x.id === goalId));
+          }
+        })
+        .catch(() => setError("Timeline unavailable."));
+    };
+    const onEvidenceUpdated = (event: Event) => {
+      if (event instanceof CustomEvent && event.detail?.goalId === goalId) {
+        load();
+      }
+    };
+    load();
+    window.addEventListener("fillpilot:evidence-updated", onEvidenceUpdated);
+    return () =>
+      window.removeEventListener(
+        "fillpilot:evidence-updated",
+        onEvidenceUpdated,
+      );
   }, [goalId]);
   if (error) return <p className={styles.empty}>{error}</p>;
   if (!goal) return <p className={styles.empty}>Reading execution evidence…</p>;

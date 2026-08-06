@@ -53,6 +53,13 @@ export function GoalPreflight({ goalId }: { goalId: string }) {
           ? `Simulated: ${body.simulation.gasEstimate} gas. Order UID ${body.orderUid}. ${body.boundary}`
           : `Simulation rejected: ${body.simulation.reason}. ${body.boundary}`,
       );
+      if (body.simulation.status === "simulated") {
+        window.dispatchEvent(
+          new CustomEvent("fillpilot:evidence-updated", {
+            detail: { goalId },
+          }),
+        );
+      }
     } catch {
       setMessage("FillPilot could not reach the simulation route.");
     }
