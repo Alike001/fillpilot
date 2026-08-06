@@ -1,10 +1,27 @@
 "use client";
+
 import { useState } from "react";
+
+import { formatTokenAmount } from "@/domain/goal-draft";
+
 import styles from "./goal-preflight.module.css";
+
+function formatWeth(value: string): string {
+  try {
+    return formatTokenAmount(BigInt(value), 18);
+  } catch {
+    return value;
+  }
+}
+
 export function GoalPreflight({ goalId }: { goalId: string }) {
   const [message, setMessage] = useState("No quote requested.");
   const [quoteEligible, setQuoteEligible] = useState(false);
+  const [activeStep, setActiveStep] = useState<"quote" | "simulation">();
+
   async function requestQuote() {
+    if (activeStep) return;
+    setActiveStep("quote");
     setMessage("Reading quote…");
     setQuoteEligible(false);
     try {
@@ -17,17 +34,21 @@ export function GoalPreflight({ goalId }: { goalId: string }) {
       if (response.ok) {
         setQuoteEligible(true);
         setMessage(
-          `Floor is met: ${body.buyAmount} wei WETH. ${body.boundary}`,
+          `Fresh quote meets your protected floor: ${formatWeth(body.buyAmount ?? "0")} WETH. ${body.boundary}`,
         );
       } else {
         setMessage(body.error ?? "Quote unavailable.");
       }
     } catch {
       setMessage("FillPilot could not reach the quote route.");
+    } finally {
+      setActiveStep(undefined);
     }
   }
 
   async function simulatePresignature() {
+    if (activeStep || !quoteEligible) return;
+    setActiveStep("simulation");
     setMessage("KeeperHub is simulating the exact pre-signature call…");
     try {
       const response = await fetch(`/api/goals/${goalId}/presign-simulation`, {
@@ -62,6 +83,8 @@ export function GoalPreflight({ goalId }: { goalId: string }) {
       }
     } catch {
       setMessage("FillPilot could not reach the simulation route.");
+    } finally {
+      setActiveStep(undefined);
     }
   }
   return (
@@ -74,16 +97,25 @@ export function GoalPreflight({ goalId }: { goalId: string }) {
         <span className={styles.label}>Read + simulate only</span>
       </div>
       <div className={styles.controls}>
-        <button className={styles.button} onClick={requestQuote} type="button">
-          Request fresh CoW quote
+        <button
+          className={styles.button}
+          disabled={Boolean(activeStep)}
+          onClick={requestQuote}
+          type="button"
+        >
+          {activeStep === "quote"
+            ? "Reading fresh CoW quote…"
+            : "Request fresh CoW quote"}
         </button>
         <button
           className={styles.button}
-          disabled={!quoteEligible}
+          disabled={!quoteEligible || Boolean(activeStep)}
           onClick={simulatePresignature}
           type="button"
         >
-          Simulate CoW pre-signature with KeeperHub
+          {activeStep === "simulation"
+            ? "Simulating with KeeperHub…"
+            : "Simulate CoW pre-signature with KeeperHub"}
         </button>
       </div>
       <p className={styles.boundary}>
