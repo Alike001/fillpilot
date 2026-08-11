@@ -22,15 +22,25 @@ export function evaluateCheckpoint(input: CheckpointInput): {
   readonly receipt: DecisionReceipt<CheckpointInput>;
   readonly stored: StoredCheckpointDecision;
 } {
-  const decision = decideCheckpoint(input);
-  const receipt = createDecisionReceipt(input, decision);
+  const receiptInput: CheckpointInput = input.quote
+    ? input
+    : {
+        goal: input.goal,
+        now: input.now,
+        orderState: input.orderState,
+      };
+  const decision = decideCheckpoint(receiptInput);
+  const receipt = createDecisionReceipt(receiptInput, decision);
   return {
     decision,
     receipt,
     stored: {
       ruleVersion: receipt.ruleVersion,
       inputHash: receipt.inputHash,
-      inputs: JSON.parse(canonicalJson(input)) as Record<string, unknown>,
+      inputs: JSON.parse(canonicalJson(receiptInput)) as Record<
+        string,
+        unknown
+      >,
       output: receipt.output,
       explanation: receipt.explanation,
     },
