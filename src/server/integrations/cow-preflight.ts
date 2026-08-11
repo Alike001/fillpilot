@@ -38,7 +38,10 @@ type QuoteApi = Pick<OrderBookApi, "getQuote">;
 export function createCowQuoteApi(
   network: ExecutionNetworkProfile = executionNetwork(),
 ): QuoteApi {
-  return new OrderBookApi({ chainId: network.cowChainId });
+  return new OrderBookApi({
+    chainId: network.cowChainId,
+    env: network.cowEnvironment,
+  });
 }
 
 export async function getCowPreflight(

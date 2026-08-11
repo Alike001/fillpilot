@@ -12,6 +12,7 @@ export type ExecutionNetworkProfile = Readonly<{
   id: FillPilotExecutionNetwork;
   chainId: number;
   cowChainId: SupportedChainId;
+  cowEnvironment: "prod" | "staging";
   settlement: Address;
   sellToken: Address;
   buyToken: Address;
@@ -28,6 +29,7 @@ const profiles: Record<FillPilotExecutionNetwork, ExecutionNetworkProfile> = {
     id: "base-mainnet",
     chainId: SupportedChainId.BASE,
     cowChainId: SupportedChainId.BASE,
+    cowEnvironment: "prod",
     settlement: COW_PROTOCOL_SETTLEMENT_CONTRACT_ADDRESS[
       SupportedChainId.BASE
     ] as Address,
@@ -44,6 +46,7 @@ const profiles: Record<FillPilotExecutionNetwork, ExecutionNetworkProfile> = {
     id: "ethereum-sepolia",
     chainId: SupportedChainId.SEPOLIA,
     cowChainId: SupportedChainId.SEPOLIA,
+    cowEnvironment: "staging",
     settlement: COW_PROTOCOL_SETTLEMENT_CONTRACT_ADDRESS[
       SupportedChainId.SEPOLIA
     ] as Address,

@@ -13,6 +13,7 @@ describe("FillPilot execution networks", () => {
     expect(profile).toMatchObject({
       id: "base-mainnet",
       chainId: SupportedChainId.BASE,
+      cowEnvironment: "prod",
       isTestnet: false,
     });
   });
@@ -22,6 +23,7 @@ describe("FillPilot execution networks", () => {
     expect(profile).toMatchObject({
       chainId: SupportedChainId.SEPOLIA,
       cowChainId: SupportedChainId.SEPOLIA,
+      cowEnvironment: "staging",
       isTestnet: true,
     });
     expect(profile.settlement).toMatch(/^0x[a-fA-F0-9]{40}$/);
