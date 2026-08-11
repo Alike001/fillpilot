@@ -1,4 +1,5 @@
 .next
+.env*
 coverage
 dist
 drizzle/meta
