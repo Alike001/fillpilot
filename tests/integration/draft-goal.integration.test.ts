@@ -1,5 +1,5 @@
 import postgres from "postgres";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import { decryptSecret } from "../../src/server/connections/crypto";
 import {
@@ -14,6 +14,11 @@ import {
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
 let client: ReturnType<typeof postgres> | undefined;
+const fixtureWallets = [
+  "0x1111111111111111111111111111111111111111",
+  "0x2222222222222222222222222222222222222222",
+  "0x3333333333333333333333333333333333333333",
+] as const;
 
 describeWithDatabase("draft goal persistence", () => {
   beforeAll(() => {
@@ -22,6 +27,18 @@ describeWithDatabase("draft goal persistence", () => {
 
   afterAll(async () => {
     await client?.end();
+  });
+
+  afterEach(async () => {
+    for (const walletAddress of fixtureWallets) {
+      await client!`
+        delete from goals
+        where connection_id in (
+          select id from connections where wallet_address = ${walletAddress}
+        )
+      `;
+      await client!`delete from connections where wallet_address = ${walletAddress}`;
+    }
   });
 
   it("encrypts the connection and persists exact Base goal amounts", async () => {
