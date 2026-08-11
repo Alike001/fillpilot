@@ -11,6 +11,8 @@ describe("CoW pre-signature simulation request", () => {
       uid: `0x${"ab".repeat(56)}`,
     });
 
+    expect(request.chainId).toBe(8453);
+
     expect(request).toMatchObject({
       goalId: "goal-1",
       orderUid: `0x${"ab".repeat(56)}`,

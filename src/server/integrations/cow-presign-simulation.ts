@@ -2,14 +2,20 @@ import { encodeFunctionData } from "viem";
 
 import type { PresignOrder } from "./cow-order";
 import { cowPresignAbi } from "./keeperhub-direct-simulator";
+import {
+  executionNetwork,
+  type ExecutionNetworkProfile,
+} from "./execution-network";
 import type { SimulationRequest } from "./keeperhub-simulation";
 
 export function buildPresignSimulationRequest(
   goalId: string,
   order: PresignOrder,
+  network: ExecutionNetworkProfile = executionNetwork(),
 ): SimulationRequest {
   return {
     goalId,
+    chainId: network.chainId,
     orderUid: order.uid,
     to: order.settlement,
     data: encodeFunctionData({

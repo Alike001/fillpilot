@@ -7,6 +7,7 @@ import { cowPresignAbi } from "./keeperhub-direct-simulator";
 const ORDER_UID = `0x${"ab".repeat(56)}` as `0x${string}`;
 const REQUEST = {
   goalId: "goal-1",
+  chainId: 8453,
   orderUid: ORDER_UID,
   to: "0x9008d19f58aabd9ed0d60971565aa8510560ab41" as `0x${string}`,
   data: encodeFunctionData({

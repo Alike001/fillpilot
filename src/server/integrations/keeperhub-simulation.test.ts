@@ -4,6 +4,7 @@ import { simulateAndRecord, simulateOnly } from "./keeperhub-simulation";
 
 const REQUEST = {
   goalId: "goal-1",
+  chainId: 8453,
   orderUid: `0x${"ab".repeat(56)}` as `0x${string}`,
   to: "0x9008D19f58AAbD9eD0D60971565AA8510560ab41" as const,
   data: "0x1234" as const,
@@ -27,6 +28,14 @@ describe("KeeperHub simulation boundary", () => {
     await expect(
       simulateOnly({ simulate }, { ...REQUEST, data: "0x" }),
     ).rejects.toThrow("calldata");
+    expect(simulate).not.toHaveBeenCalled();
+  });
+
+  it("rejects a missing or invalid chain before any simulator call", async () => {
+    const simulate = vi.fn();
+    await expect(
+      simulateOnly({ simulate }, { ...REQUEST, chainId: 0 }),
+    ).rejects.toThrow("chain ID");
     expect(simulate).not.toHaveBeenCalled();
   });
 

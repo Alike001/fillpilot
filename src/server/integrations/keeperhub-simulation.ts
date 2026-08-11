@@ -1,5 +1,6 @@
 export type SimulationRequest = {
   readonly goalId: string;
+  readonly chainId: number;
   readonly orderUid: `0x${string}`;
   readonly to: `0x${string}`;
   readonly data: `0x${string}`;
@@ -40,6 +41,9 @@ export async function simulateOnly(
 ): Promise<SimulationResult> {
   if (!request.goalId || !/^0x[a-fA-F0-9]{112}$/.test(request.orderUid)) {
     throw new Error("Simulation requires a canonical CoW order UID");
+  }
+  if (!Number.isSafeInteger(request.chainId) || request.chainId <= 0) {
+    throw new Error("Simulation requires an explicit positive chain ID");
   }
   if (request.data === "0x") {
     throw new Error("Simulation requires encoded contract calldata");

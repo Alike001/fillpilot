@@ -9,6 +9,7 @@ import {
 const ORDER_UID = `0x${"ab".repeat(56)}` as `0x${string}`;
 const REQUEST = {
   goalId: "goal-1",
+  chainId: 8453,
   orderUid: ORDER_UID,
   to: "0x9008D19f58AAbD9eD0D60971565AA8510560ab41" as const,
   data: encodeFunctionData({
@@ -54,7 +55,7 @@ describe("KeeperHub direct contract-call simulator", () => {
     );
     expect(JSON.parse(String(init.body))).toEqual({
       contractAddress: REQUEST.to,
-      chainId: 8453,
+      chainId: REQUEST.chainId,
       functionName: "setPreSignature",
       functionArgs: JSON.stringify([ORDER_UID, true]),
       abi: JSON.stringify(cowPresignAbi),

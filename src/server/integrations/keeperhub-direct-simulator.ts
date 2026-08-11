@@ -63,7 +63,7 @@ export class KeeperHubDirectSimulator implements KeeperHubSimulator {
         },
         body: JSON.stringify({
           contractAddress: request.to,
-          chainId: 8453,
+          chainId: request.chainId,
           functionName: "setPreSignature",
           functionArgs: JSON.stringify([request.orderUid, true]),
           abi: JSON.stringify(PRESIGN_ABI),
