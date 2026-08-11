@@ -40,7 +40,12 @@ export const serverEnvSchema = z.object({
   APP_URL: z.url().default("http://127.0.0.1:3000"),
   KEEPERHUB_MCP_URL: z.url().default("https://app.keeperhub.com/mcp"),
   KEEPERHUB_API_KEY: optionalKeeperHubApiKey,
+  EXECUTION_NETWORK: z
+    .enum(["base-mainnet", "ethereum-sepolia"])
+    .default("base-mainnet"),
+  SEPOLIA_RPC_URL: optionalUrl,
   ENABLE_MAINNET_WRITES: writeEnablement,
+  ENABLE_TESTNET_WRITES: writeEnablement,
   TOKEN_ENCRYPTION_KEY: optionalEncryptionKey,
 });
 
@@ -84,4 +89,22 @@ export function requireMainnetWritesEnabled(env = parseServerEnv()): void {
       "Mainnet writes are disabled. Set ENABLE_MAINNET_WRITES=true only after explicit operator approval.",
     );
   }
+}
+
+/** Testnet writes require an independent opt-in and never reuse Base settings. */
+export function requireEthereumSepoliaTestnetReady(
+  env = parseServerEnv(),
+): string {
+  if (env.EXECUTION_NETWORK !== "ethereum-sepolia") {
+    throw new Error("Ethereum Sepolia is not the selected execution network.");
+  }
+  if (!env.SEPOLIA_RPC_URL) {
+    throw new Error("SEPOLIA_RPC_URL is required for Ethereum Sepolia reads.");
+  }
+  if (!env.ENABLE_TESTNET_WRITES) {
+    throw new Error(
+      "Testnet writes are disabled. Set ENABLE_TESTNET_WRITES=true only after explicit operator approval.",
+    );
+  }
+  return env.SEPOLIA_RPC_URL;
 }
