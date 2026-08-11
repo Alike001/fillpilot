@@ -8,6 +8,11 @@ export type DoctorInput = {
   requiredSellAmount?: bigint;
   baseReadUnavailable?: boolean;
   connectionIssue?: "missing-session" | "expired-attempt";
+  execution?: {
+    chainId: number;
+    label: string;
+    sellSymbol: string;
+  };
 };
 
 export type DoctorCheck = {
@@ -21,9 +26,14 @@ const BASE_CHAIN_ID = 8453;
 const MINIMUM_GAS_WEI = 100_000_000_000_000n;
 
 export function buildConnectionDoctor(input: DoctorInput): DoctorCheck[] {
+  const execution = input.execution ?? {
+    chainId: BASE_CHAIN_ID,
+    label: "Base mainnet",
+    sellSymbol: "USDC",
+  };
   const connected = input.connection === "connected";
   const hasWallet = Boolean(input.walletAddress);
-  const correctChain = input.chainId === BASE_CHAIN_ID;
+  const correctChain = input.chainId === execution.chainId;
   const canInspect = connected && hasWallet && correctChain;
 
   return [
@@ -45,9 +55,9 @@ export function buildConnectionDoctor(input: DoctorInput): DoctorCheck[] {
     },
     {
       id: "chain",
-      label: "Base mainnet",
+      label: execution.label,
       state:
-        connected && input.chainId === BASE_CHAIN_ID
+        connected && input.chainId === execution.chainId
           ? "ready"
           : connected
             ? "attention"
@@ -67,7 +77,7 @@ export function buildConnectionDoctor(input: DoctorInput): DoctorCheck[] {
     ),
     balanceCheck(
       "usdc",
-      "USDC balance",
+      `${execution.sellSymbol} balance`,
       input.usdcBalance,
       input.requiredSellAmount ?? 1n,
       canInspect,
@@ -75,7 +85,7 @@ export function buildConnectionDoctor(input: DoctorInput): DoctorCheck[] {
     ),
     balanceCheck(
       "allowance",
-      "CoW allowance",
+      `CoW ${execution.sellSymbol} allowance`,
       input.allowance,
       input.requiredSellAmount ?? 1n,
       canInspect,
@@ -107,7 +117,8 @@ function balanceCheck(
       id,
       label,
       state: "unavailable",
-      detail: "Connect a Base organization wallet to inspect this value.",
+      detail:
+        "Connect the selected-network organization wallet to inspect this value.",
     };
   }
 
@@ -117,8 +128,8 @@ function balanceCheck(
       label,
       state: "attention",
       detail: readUnavailable
-        ? "Base read is temporarily unavailable. KeeperHub remains connected."
-        : "Base value is unavailable.",
+        ? "Network read is temporarily unavailable. KeeperHub remains connected."
+        : "Network value is unavailable.",
     };
   }
 
@@ -131,7 +142,7 @@ function balanceCheck(
       id,
       label,
       state: "attention",
-      detail: "No USDC is available in the organization wallet.",
+      detail: "No sell token is available in the organization wallet.",
     };
   }
   if (id === "allowance" && current === 0n) {
@@ -139,7 +150,7 @@ function balanceCheck(
       id,
       label,
       state: "attention",
-      detail: "No USDC allowance for CoW is available yet.",
+      detail: "No sell-token allowance for CoW is available yet.",
     };
   }
 

@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-import { parseServerEnv } from "@/env";
+import { parseServerEnv, requireEthereumSepoliaReadReady } from "@/env";
 import { buildConnectionDoctor } from "@/server/connections/doctor";
 import { refreshMcpWallet } from "@/server/connections/mcp-oauth";
 import {
@@ -12,7 +12,8 @@ import {
   CONNECTION_COOKIE,
   openConnectionSession,
 } from "@/server/connections/session-cookie";
-import { readBaseWallet } from "@/server/integrations/base-reader";
+import { readExecutionWallet } from "@/server/integrations/base-reader";
+import { selectedExecutionNetwork } from "@/server/integrations/execution-network";
 import {
   COW_PROTOCOL_VAULT_RELAYER_ADDRESS,
   SupportedChainId,
@@ -22,6 +23,13 @@ export const runtime = "nodejs";
 
 export async function GET() {
   try {
+    const env = parseServerEnv();
+    const profile = selectedExecutionNetwork(env);
+    const execution = {
+      chainId: profile.chainId,
+      label: profile.label,
+      sellSymbol: profile.sellSymbol,
+    };
     const sealed = (await cookies()).get(CONNECTION_COOKIE)?.value;
     if (!sealed) return disconnected("missing-session");
 
@@ -52,23 +60,27 @@ export async function GET() {
         checks: buildConnectionDoctor({
           connection: connected ? "connected" : "disconnected",
           walletAddress: auth?.walletAddress,
+          execution,
         }),
       });
       return response;
     }
 
     try {
-      const balances = await readBaseWallet(
+      const balances = await readExecutionWallet(
+        profile,
         auth.walletAddress,
         COW_PROTOCOL_VAULT_RELAYER_ADDRESS[
           SupportedChainId.BASE
         ] as `0x${string}`,
+        profile.isTestnet ? requireEthereumSepoliaReadReady(env) : undefined,
       );
       return NextResponse.json({
         checks: buildConnectionDoctor({
           connection: "connected",
           walletAddress: auth.walletAddress,
-          chainId: 8453,
+          chainId: profile.chainId,
+          execution,
           ...balances,
         }),
       });
@@ -77,7 +89,8 @@ export async function GET() {
         checks: buildConnectionDoctor({
           connection: "connected",
           walletAddress: auth.walletAddress,
-          chainId: 8453,
+          chainId: profile.chainId,
+          execution,
           baseReadUnavailable: true,
         }),
       });

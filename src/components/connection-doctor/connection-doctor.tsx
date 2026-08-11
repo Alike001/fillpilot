@@ -45,8 +45,8 @@ export function ConnectionDoctor() {
         </span>
       </div>
       <p className={styles.intro}>
-        FillPilot can inspect KeeperHub, Base, and CoW readiness here. This step
-        cannot send a transaction.
+        FillPilot can inspect KeeperHub, the selected network, and CoW readiness
+        here. This step cannot send a transaction.
       </p>
       {showConnectionFailure ? (
         <p className={styles.error} role="alert">

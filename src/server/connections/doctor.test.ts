@@ -78,11 +78,11 @@ describe("connection doctor", () => {
 
     expect(checks.find((check) => check.id === "usdc")).toMatchObject({
       state: "attention",
-      detail: "No USDC is available in the organization wallet.",
+      detail: "No sell token is available in the organization wallet.",
     });
     expect(checks.find((check) => check.id === "allowance")).toMatchObject({
       state: "attention",
-      detail: "No USDC allowance for CoW is available yet.",
+      detail: "No sell-token allowance for CoW is available yet.",
     });
   });
 
@@ -100,7 +100,34 @@ describe("connection doctor", () => {
     expect(checks.find((check) => check.id === "gas")).toMatchObject({
       state: "attention",
       detail:
-        "Base read is temporarily unavailable. KeeperHub remains connected.",
+        "Network read is temporarily unavailable. KeeperHub remains connected.",
+    });
+  });
+
+  it("labels an Ethereum Sepolia WETH-to-COW readiness check accurately", () => {
+    const checks = buildConnectionDoctor({
+      connection: "connected",
+      walletAddress: "0x1111111111111111111111111111111111111111",
+      chainId: 11155111,
+      execution: {
+        chainId: 11155111,
+        label: "Ethereum Sepolia",
+        sellSymbol: "WETH",
+      },
+      nativeGasWei: 50_000_000_000_000_000n,
+      usdcBalance: 0n,
+      allowance: 0n,
+    });
+
+    expect(checks.find((check) => check.id === "chain")).toMatchObject({
+      label: "Ethereum Sepolia",
+      state: "ready",
+    });
+    expect(checks.find((check) => check.id === "usdc")).toMatchObject({
+      label: "WETH balance",
+    });
+    expect(checks.find((check) => check.id === "allowance")).toMatchObject({
+      label: "CoW WETH allowance",
     });
   });
 });
