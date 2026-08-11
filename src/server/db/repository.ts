@@ -208,6 +208,43 @@ export async function recordSimulationEvidence(input: {
   }
 }
 
+export async function readLatestSimulationForWallet(input: {
+  goalId: string;
+  walletAddress: string;
+  chainId: number;
+}) {
+  const fingerprint = createHash("sha256")
+    .update(input.walletAddress.toLowerCase())
+    .digest("hex");
+  const { client, db } = createDatabase();
+  try {
+    const [record] = await db
+      .select({
+        goalId: keeperhubExecutions.goalId,
+        chainId: keeperhubExecutions.chainId,
+        simulation: keeperhubExecutions.simulation,
+        state: keeperhubExecutions.state,
+        createdAt: keeperhubExecutions.createdAt,
+      })
+      .from(keeperhubExecutions)
+      .innerJoin(goals, eq(keeperhubExecutions.goalId, goals.id))
+      .innerJoin(connections, eq(goals.connectionId, connections.id))
+      .where(
+        and(
+          eq(keeperhubExecutions.goalId, input.goalId),
+          eq(keeperhubExecutions.chainId, input.chainId),
+          eq(keeperhubExecutions.state, "SIMULATED"),
+          eq(connections.organizationFingerprint, fingerprint),
+        ),
+      )
+      .orderBy(desc(keeperhubExecutions.createdAt))
+      .limit(1);
+    return record;
+  } finally {
+    await client.end();
+  }
+}
+
 /**
  * Persisting a checkpoint does not make a goal executable. A later approved
  * authorization flow will call this after it has moved a goal into WATCHING.

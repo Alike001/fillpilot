@@ -7,6 +7,7 @@ import {
   listGoalHistoryForWallet,
   recordSimulationEvidence,
   recordSubmittedExecution,
+  readLatestSimulationForWallet,
   readExecutionForWallet,
   saveDraftGoal,
 } from "../../src/server/db/repository";
@@ -121,6 +122,48 @@ describeWithDatabase("draft goal persistence", () => {
     expect(count).toBe("1");
     await client!`delete from goals where id = ${saved.id}`;
     await client!`delete from connections where wallet_address = ${walletAddress}`;
+  });
+
+  it("reads simulation evidence only from the requested chain", async () => {
+    const walletAddress = "0x2222222222222222222222222222222222222222" as const;
+    const saved = await saveDraftGoal(
+      {
+        walletAddress,
+        tokens: { access_token: "test-token", token_type: "Bearer" },
+      },
+      {
+        sellAmount: "1",
+        preferredBuyAmount: "0.002",
+        minimumBuyAmount: "0.001",
+        deadline: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      },
+    );
+    await recordSimulationEvidence({
+      goalId: saved.id,
+      idempotencyKey: `sepolia-simulation:${saved.id}`,
+      operation: "presign",
+      chainId: 11155111,
+      simulation: {
+        status: "simulated",
+        gasEstimate: "48504",
+        orderUid: `0x${"ab".repeat(56)}`,
+      },
+    });
+
+    await expect(
+      readLatestSimulationForWallet({
+        goalId: saved.id,
+        walletAddress,
+        chainId: 11155111,
+      }),
+    ).resolves.toMatchObject({ chainId: 11155111 });
+    await expect(
+      readLatestSimulationForWallet({
+        goalId: saved.id,
+        walletAddress,
+        chainId: 8453,
+      }),
+    ).resolves.toBeUndefined();
   });
 
   it("reconciles only the FillPilot execution record with matching evidence", async () => {

@@ -15,6 +15,7 @@ export type TestnetCanaryReview = Readonly<{
   functionArgs: readonly [`0x${string}`, true];
   calldata: `0x${string}`;
   valueWei: "0";
+  simulatedGasEstimate: string;
   idempotencyKey: string;
   submitPolicy: "requires-separate-explicit-approval";
 }>;
@@ -27,6 +28,7 @@ export type TestnetCanaryReview = Readonly<{
 export function buildTestnetCanaryReview(
   goalId: string,
   order: PresignOrder,
+  simulatedGasEstimate = "not-recorded",
 ): TestnetCanaryReview {
   if (!goalId.trim()) {
     throw new Error("A goal ID is required to prepare a testnet canary");
@@ -45,7 +47,49 @@ export function buildTestnetCanaryReview(
     functionArgs: [request.orderUid, true],
     calldata: request.data,
     valueWei: "0",
+    simulatedGasEstimate,
     idempotencyKey: `testnet-canary:${goalId}:${request.orderUid}`,
     submitPolicy: "requires-separate-explicit-approval",
   };
+}
+
+export function buildTestnetCanaryReviewFromEvidence(input: {
+  goalId: string;
+  chainId: number;
+  simulation: unknown;
+}): TestnetCanaryReview {
+  const network = executionNetwork("ethereum-sepolia");
+  if (input.chainId !== network.chainId) {
+    throw new Error("Testnet canary review requires Ethereum Sepolia evidence");
+  }
+  if (!isSuccessfulPresignSimulation(input.simulation)) {
+    throw new Error(
+      "Testnet canary review requires a successful stored simulation",
+    );
+  }
+
+  return buildTestnetCanaryReview(
+    input.goalId,
+    {
+      order: {} as never,
+      owner: "0x0000000000000000000000000000000000000000",
+      settlement: network.settlement,
+      uid: input.simulation.orderUid,
+    },
+    input.simulation.gasEstimate,
+  );
+}
+
+function isSuccessfulPresignSimulation(simulation: unknown): simulation is {
+  status: "simulated";
+  orderUid: `0x${string}`;
+  gasEstimate: string;
+} {
+  if (!simulation || typeof simulation !== "object") return false;
+  const value = simulation as Record<string, unknown>;
+  return (
+    value.status === "simulated" &&
+    typeof value.gasEstimate === "string" &&
+    /^0x[a-fA-F0-9]{112}$/.test(String(value.orderUid))
+  );
 }

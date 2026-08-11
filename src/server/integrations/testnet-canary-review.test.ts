@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { executionNetwork } from "./execution-network";
-import { buildTestnetCanaryReview } from "./testnet-canary-review";
+import {
+  buildTestnetCanaryReview,
+  buildTestnetCanaryReviewFromEvidence,
+} from "./testnet-canary-review";
 
 const UID = `0x${"ab".repeat(56)}` as const;
 
@@ -39,5 +42,46 @@ describe("testnet canary review", () => {
         uid: UID,
       }),
     ).toThrow("goal ID is required");
+  });
+
+  it("requires a successful Ethereum Sepolia simulation record", () => {
+    expect(() =>
+      buildTestnetCanaryReviewFromEvidence({
+        goalId: "goal-1",
+        chainId: 8453,
+        simulation: {
+          status: "simulated",
+          gasEstimate: "48504",
+          orderUid: UID,
+        },
+      }),
+    ).toThrow("requires Ethereum Sepolia evidence");
+
+    expect(() =>
+      buildTestnetCanaryReviewFromEvidence({
+        goalId: "goal-1",
+        chainId: 11155111,
+        simulation: { status: "rejected", orderUid: UID },
+      }),
+    ).toThrow("requires a successful stored simulation");
+  });
+
+  it("turns verified Sepolia evidence into an exact zero-value review", () => {
+    expect(
+      buildTestnetCanaryReviewFromEvidence({
+        goalId: "goal-1",
+        chainId: 11155111,
+        simulation: {
+          status: "simulated",
+          gasEstimate: "48504",
+          orderUid: UID,
+        },
+      }),
+    ).toMatchObject({
+      orderUid: UID,
+      simulatedGasEstimate: "48504",
+      valueWei: "0",
+      chainId: 11155111,
+    });
   });
 });
