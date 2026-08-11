@@ -4,7 +4,8 @@ import {
   parseServerEnv,
   requireDatabaseUrl,
   requireKeeperHubApiKey,
-  requireEthereumSepoliaTestnetReady,
+  requireEthereumSepoliaReadReady,
+  requireEthereumSepoliaTestnetWriteReady,
   requireMainnetWritesEnabled,
 } from "./env";
 
@@ -81,12 +82,12 @@ describe("server environment", () => {
 
   it("requires a separate Sepolia network, RPC, and write flag", () => {
     const base = parseServerEnv({});
-    expect(() => requireEthereumSepoliaTestnetReady(base)).toThrow(
+    expect(() => requireEthereumSepoliaReadReady(base)).toThrow(
       "not the selected",
     );
 
     const selected = parseServerEnv({ EXECUTION_NETWORK: "ethereum-sepolia" });
-    expect(() => requireEthereumSepoliaTestnetReady(selected)).toThrow(
+    expect(() => requireEthereumSepoliaReadReady(selected)).toThrow(
       "SEPOLIA_RPC_URL",
     );
 
@@ -94,12 +95,15 @@ describe("server environment", () => {
       EXECUTION_NETWORK: "ethereum-sepolia",
       SEPOLIA_RPC_URL: "https://sepolia.example.test",
     });
-    expect(() => requireEthereumSepoliaTestnetReady(readable)).toThrow(
+    expect(requireEthereumSepoliaReadReady(readable)).toBe(
+      "https://sepolia.example.test",
+    );
+    expect(() => requireEthereumSepoliaTestnetWriteReady(readable)).toThrow(
       "Testnet writes are disabled",
     );
 
     expect(
-      requireEthereumSepoliaTestnetReady(
+      requireEthereumSepoliaTestnetWriteReady(
         parseServerEnv({
           EXECUTION_NETWORK: "ethereum-sepolia",
           SEPOLIA_RPC_URL: "https://sepolia.example.test",

@@ -92,7 +92,7 @@ export function requireMainnetWritesEnabled(env = parseServerEnv()): void {
 }
 
 /** Testnet writes require an independent opt-in and never reuse Base settings. */
-export function requireEthereumSepoliaTestnetReady(
+export function requireEthereumSepoliaReadReady(
   env = parseServerEnv(),
 ): string {
   if (env.EXECUTION_NETWORK !== "ethereum-sepolia") {
@@ -101,10 +101,17 @@ export function requireEthereumSepoliaTestnetReady(
   if (!env.SEPOLIA_RPC_URL) {
     throw new Error("SEPOLIA_RPC_URL is required for Ethereum Sepolia reads.");
   }
+  return env.SEPOLIA_RPC_URL;
+}
+
+export function requireEthereumSepoliaTestnetWriteReady(
+  env = parseServerEnv(),
+): string {
+  const rpcUrl = requireEthereumSepoliaReadReady(env);
   if (!env.ENABLE_TESTNET_WRITES) {
     throw new Error(
       "Testnet writes are disabled. Set ENABLE_TESTNET_WRITES=true only after explicit operator approval.",
     );
   }
-  return env.SEPOLIA_RPC_URL;
+  return rpcUrl;
 }
