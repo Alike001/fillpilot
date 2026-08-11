@@ -8,6 +8,7 @@ const SETTLEMENT = "0x9008D19f58AAbD9eD0D60971565AA8510560ab41";
 
 type Goal = {
   id: string;
+  market: { sellSymbol: string; network: string };
   latestExecution?: {
     simulation?: { gasEstimate?: string; orderUid?: string };
   };
@@ -81,8 +82,8 @@ export function AuthorizationReview({ goalId }: { goalId: string }) {
       </dl>
       <p className={styles.boundary}>
         This call only authorizes the CoW order UID. It does not post an order,
-        approve USDC, or sell assets. The server rejects it until a separate
-        operator approval enables mainnet writes.
+        approve {goal.market.sellSymbol}, or sell assets. The server rejects it
+        until a separate operator approval enables {goal.market.network} writes.
       </p>
     </section>
   );

@@ -10,6 +10,13 @@ type Goal = {
   minimumBuyAmount: string;
   state: string;
   deadline: string;
+  market: {
+    network: string;
+    sellSymbol: string;
+    buySymbol: string;
+    sellDecimals: number;
+    buyDecimals: number;
+  };
   latestExecution?: {
     state: string;
     executionId?: string;
@@ -98,9 +105,13 @@ export function GoalTimeline({ goalId }: { goalId: string }) {
             Draft · deadline {new Date(goal.deadline).toLocaleString()}
           </span>
           <span className={styles.intent}>
-            Sell {formatAmount(goal.sellAmount, 6)} USDC · target{" "}
-            {formatAmount(goal.preferredBuyAmount, 18)} WETH · floor{" "}
-            {formatAmount(goal.minimumBuyAmount, 18)} WETH
+            {goal.market.network} · sell{" "}
+            {formatAmount(goal.sellAmount, goal.market.sellDecimals)}{" "}
+            {goal.market.sellSymbol} · target{" "}
+            {formatAmount(goal.preferredBuyAmount, goal.market.buyDecimals)}{" "}
+            {goal.market.buySymbol} · floor{" "}
+            {formatAmount(goal.minimumBuyAmount, goal.market.buyDecimals)}{" "}
+            {goal.market.buySymbol}
           </span>
         </div>
       </div>

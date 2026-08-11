@@ -10,6 +10,16 @@ export const WETH_DECIMALS = 18;
 export const CHECKPOINT_LEAD_TIME_MS = 5 * 60 * 1000;
 export const MINIMUM_GOAL_DURATION_MS = 10 * 60 * 1000;
 
+export type GoalDraftMarket = Readonly<{
+  sellDecimals: number;
+  buyDecimals: number;
+}>;
+
+export const BASE_GOAL_DRAFT_MARKET: GoalDraftMarket = {
+  sellDecimals: USDC_DECIMALS,
+  buyDecimals: WETH_DECIMALS,
+};
+
 export type GoalDraftInput = {
   deadline: string;
   minimumBuyAmount: string;
@@ -28,20 +38,21 @@ export type GoalDraft = {
 export function validateGoalDraft(
   input: GoalDraftInput,
   now = Date.now(),
+  market: GoalDraftMarket = BASE_GOAL_DRAFT_MARKET,
 ): GoalDraft {
   const sellAmount = parseTokenAmount(
     input.sellAmount,
-    USDC_DECIMALS,
+    market.sellDecimals,
     "Sell amount",
   );
   const preferredBuyAmount = parseTokenAmount(
     input.preferredBuyAmount,
-    WETH_DECIMALS,
+    market.buyDecimals,
     "Preferred receive amount",
   );
   const minimumBuyAmount = parseTokenAmount(
     input.minimumBuyAmount,
-    WETH_DECIMALS,
+    market.buyDecimals,
     "Minimum receive amount",
   );
   if (minimumBuyAmount > preferredBuyAmount) {

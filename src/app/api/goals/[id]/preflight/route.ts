@@ -8,6 +8,7 @@ import {
 } from "@/server/connections/session-cookie";
 import { readGoalForWallet } from "@/server/db/repository";
 import { getCowPreflight } from "@/server/integrations/cow-preflight";
+import { executionNetworkForGoal } from "@/server/integrations/execution-network";
 
 export const runtime = "nodejs";
 
@@ -37,18 +38,29 @@ export async function GET(
         { status: 409 },
       );
     }
-    const preflight = await getCowPreflight({
-      owner: auth.walletAddress,
-      sellAmount: BigInt(goal.sellAmount),
-      minimumBuyAmount: BigInt(goal.minimumBuyAmount),
-      deadline: goal.deadline,
-    });
+    const profile = executionNetworkForGoal(goal);
+    const preflight = await getCowPreflight(
+      {
+        owner: auth.walletAddress,
+        sellAmount: BigInt(goal.sellAmount),
+        minimumBuyAmount: BigInt(goal.minimumBuyAmount),
+        deadline: goal.deadline,
+      },
+      undefined,
+      new Date(),
+      profile,
+    );
     return NextResponse.json({
       status: "eligible",
       buyAmount: preflight.buyAmount.toString(),
       quoteExpiresAt: preflight.quoteExpiresAt.toISOString(),
       validTo: preflight.validTo,
       verified: preflight.verified,
+      market: {
+        network: profile.label,
+        buySymbol: profile.buySymbol,
+        buyDecimals: profile.buyDecimals,
+      },
       boundary:
         "Quote only. No order, approval, KeeperHub execution, or transaction was created.",
     });

@@ -16,6 +16,7 @@ import { getValidatedCowQuote } from "@/server/integrations/cow-preflight";
 import { buildPresignSimulationRequest } from "@/server/integrations/cow-presign-simulation";
 import { KeeperHubDirectSimulator } from "@/server/integrations/keeperhub-direct-simulator";
 import { simulateAndRecord } from "@/server/integrations/keeperhub-simulation";
+import { executionNetworkForGoal } from "@/server/integrations/execution-network";
 
 export const runtime = "nodejs";
 
@@ -43,6 +44,7 @@ export async function POST(
         { status: 409 },
       );
     }
+    const profile = executionNetworkForGoal(goal);
 
     const apiKey = requireKeeperHubApiKey(parseServerEnv());
     const input = {
@@ -51,12 +53,17 @@ export async function POST(
       minimumBuyAmount: BigInt(goal.minimumBuyAmount),
       deadline: goal.deadline,
     } as const;
-    const quote = await getValidatedCowQuote(input);
-    const order = await buildPresignOrder(input, quote);
+    const quote = await getValidatedCowQuote(
+      input,
+      undefined,
+      new Date(),
+      profile,
+    );
+    const order = await buildPresignOrder(input, quote, new Date(), profile);
     const simulation = await simulateAndRecord(
       new KeeperHubDirectSimulator({ apiKey }),
       { record: recordSimulationEvidence },
-      buildPresignSimulationRequest(goal.id, order),
+      buildPresignSimulationRequest(goal.id, order, profile),
     );
     return NextResponse.json({
       orderUid: order.uid,

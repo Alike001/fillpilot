@@ -6,22 +6,21 @@ import { encryptSecret } from "@/server/connections/crypto";
 import type { ConnectionAuthState } from "@/server/connections/mcp-oauth";
 import type { ReconciledExecution } from "@/server/integrations/keeperhub-execution-reconciliation";
 import type { CheckpointWork } from "@/worker/checkpoint-work";
+import type { ExecutionNetworkProfile } from "@/server/integrations/execution-network";
 
 import { createDatabase } from "./client";
 import { connections, goals, keeperhubExecutions, workItems } from "./schema";
 
-const BASE_USDC = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
-const BASE_WETH = "0x4200000000000000000000000000000000000006";
-
 export async function saveDraftGoal(
   auth: ConnectionAuthState,
   input: GoalDraftInput,
+  profile: ExecutionNetworkProfile,
 ) {
   const walletAddress = auth.walletAddress;
   if (!walletAddress || !auth.tokens?.access_token) {
     throw new Error("A connected KeeperHub organization is required");
   }
-  const draft = validateGoalDraft(input);
+  const draft = validateGoalDraft(input, Date.now(), profile);
   const { client, db } = createDatabase();
   try {
     return await db.transaction(async (tx) => {
@@ -48,8 +47,9 @@ export async function saveDraftGoal(
         .insert(goals)
         .values({
           connectionId: connection.id,
-          sellToken: BASE_USDC,
-          buyToken: BASE_WETH,
+          chainId: profile.chainId,
+          sellToken: profile.sellToken,
+          buyToken: profile.buyToken,
           sellAmount: draft.sellAmount.toString(),
           preferredBuyAmount: draft.preferredBuyAmount.toString(),
           minimumBuyAmount: draft.minimumBuyAmount.toString(),
@@ -72,6 +72,9 @@ export async function readGoalForWallet(goalId: string, walletAddress: string) {
     const [goal] = await db
       .select({
         id: goals.id,
+        chainId: goals.chainId,
+        sellToken: goals.sellToken,
+        buyToken: goals.buyToken,
         sellAmount: goals.sellAmount,
         preferredBuyAmount: goals.preferredBuyAmount,
         minimumBuyAmount: goals.minimumBuyAmount,
@@ -103,6 +106,9 @@ export async function listGoalHistoryForWallet(walletAddress: string) {
     const rows = await db
       .select({
         id: goals.id,
+        chainId: goals.chainId,
+        sellToken: goals.sellToken,
+        buyToken: goals.buyToken,
         sellAmount: goals.sellAmount,
         preferredBuyAmount: goals.preferredBuyAmount,
         minimumBuyAmount: goals.minimumBuyAmount,
@@ -127,6 +133,9 @@ export async function listGoalHistoryForWallet(walletAddress: string) {
       string,
       {
         id: string;
+        chainId: number;
+        sellToken: string;
+        buyToken: string;
         sellAmount: string;
         preferredBuyAmount: string;
         minimumBuyAmount: string;
@@ -148,6 +157,9 @@ export async function listGoalHistoryForWallet(walletAddress: string) {
       if (!byGoal.has(row.id)) {
         byGoal.set(row.id, {
           id: row.id,
+          chainId: row.chainId,
+          sellToken: row.sellToken,
+          buyToken: row.buyToken,
           sellAmount: row.sellAmount,
           preferredBuyAmount: row.preferredBuyAmount,
           minimumBuyAmount: row.minimumBuyAmount,

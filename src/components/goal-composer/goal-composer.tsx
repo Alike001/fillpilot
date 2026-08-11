@@ -18,7 +18,15 @@ const INITIAL_INPUT: GoalDraftInput = {
   deadline: "",
 };
 
-export function GoalComposer() {
+type GoalMarket = {
+  network: string;
+  sellSymbol: string;
+  buySymbol: string;
+  sellDecimals: number;
+  buyDecimals: number;
+};
+
+export function GoalComposer({ market }: { market: GoalMarket }) {
   const [input, setInput] = useState<GoalDraftInput>(INITIAL_INPUT);
   const [submitted, setSubmitted] = useState(false);
   const [savedGoalId, setSavedGoalId] = useState<string>();
@@ -26,7 +34,10 @@ export function GoalComposer() {
 
   const validation = useMemo(() => {
     try {
-      return { draft: validateGoalDraft(input), error: undefined };
+      return {
+        draft: validateGoalDraft(input, Date.now(), market),
+        error: undefined,
+      };
     } catch (error) {
       return {
         draft: undefined,
@@ -34,7 +45,7 @@ export function GoalComposer() {
           error instanceof Error ? error.message : "Goal inputs are invalid",
       };
     }
-  }, [input]);
+  }, [input, market]);
 
   function update(field: keyof GoalDraftInput, value: string) {
     setSubmitted(false);
@@ -52,7 +63,7 @@ export function GoalComposer() {
             One protected fill, one chance to adapt.
           </h2>
         </div>
-        <span className={styles.network}>Base mainnet</span>
+        <span className={styles.network}>{market.network}</span>
       </div>
 
       <div className={styles.layout}>
@@ -65,9 +76,9 @@ export function GoalComposer() {
         >
           <div className={styles.lockedPair}>
             <span>Sell</span>
-            <strong>USDC</strong>
+            <strong>{market.sellSymbol}</strong>
             <span aria-hidden="true">→</span>
-            <strong>WETH</strong>
+            <strong>{market.buySymbol}</strong>
             <span>Receive</span>
           </div>
 
@@ -81,7 +92,7 @@ export function GoalComposer() {
                 placeholder="0.00"
                 value={input.sellAmount}
               />
-              <b>USDC</b>
+              <b>{market.sellSymbol}</b>
             </div>
           </label>
 
@@ -97,7 +108,7 @@ export function GoalComposer() {
                 placeholder="0.000000"
                 value={input.preferredBuyAmount}
               />
-              <b>WETH</b>
+              <b>{market.buySymbol}</b>
             </div>
             <small>This is the first order’s target.</small>
           </label>
@@ -114,7 +125,7 @@ export function GoalComposer() {
                 placeholder="0.000000"
                 value={input.minimumBuyAmount}
               />
-              <b>WETH</b>
+              <b>{market.buySymbol}</b>
             </div>
             <small>FillPilot never replaces below this floor.</small>
           </label>
@@ -193,15 +204,21 @@ export function GoalComposer() {
                 <div>
                   <dt>Initial order target</dt>
                   <dd>
-                    {formatTokenAmount(validation.draft.preferredBuyAmount, 18)}{" "}
-                    WETH
+                    {formatTokenAmount(
+                      validation.draft.preferredBuyAmount,
+                      market.buyDecimals,
+                    )}{" "}
+                    {market.buySymbol}
                   </dd>
                 </div>
                 <div>
                   <dt>Protected floor</dt>
                   <dd>
-                    {formatTokenAmount(validation.draft.minimumBuyAmount, 18)}{" "}
-                    WETH
+                    {formatTokenAmount(
+                      validation.draft.minimumBuyAmount,
+                      market.buyDecimals,
+                    )}{" "}
+                    {market.buySymbol}
                   </dd>
                 </div>
                 <div>

@@ -6,7 +6,7 @@ import { formatTokenAmount } from "@/domain/goal-draft";
 
 import styles from "./goal-preflight.module.css";
 
-function formatWeth(value: string): string {
+function formatToken(value: string, decimals: number): string {
   try {
     return formatTokenAmount(BigInt(value), 18);
   } catch {
@@ -30,11 +30,12 @@ export function GoalPreflight({ goalId }: { goalId: string }) {
         buyAmount?: string;
         error?: string;
         boundary?: string;
+        market?: { buySymbol: string; buyDecimals: number; network: string };
       };
       if (response.ok) {
         setQuoteEligible(true);
         setMessage(
-          `Fresh quote meets your protected floor: ${formatWeth(body.buyAmount ?? "0")} WETH. ${body.boundary}`,
+          `Fresh ${body.market?.network ?? "saved-goal"} quote meets your protected floor: ${formatToken(body.buyAmount ?? "0", body.market?.buyDecimals ?? 18)} ${body.market?.buySymbol ?? "tokens"}. ${body.boundary}`,
         );
       } else {
         setMessage(body.error ?? "Quote unavailable.");
@@ -92,7 +93,9 @@ export function GoalPreflight({ goalId }: { goalId: string }) {
       <div className={styles.heading}>
         <div>
           <h2>Inspect a fresh CoW quote.</h2>
-          <p>Check the saved WETH floor before doing anything else.</p>
+          <p>
+            Check the saved goal’s protected floor before doing anything else.
+          </p>
         </div>
         <span className={styles.label}>Read + simulate only</span>
       </div>
@@ -119,8 +122,8 @@ export function GoalPreflight({ goalId }: { goalId: string }) {
         </button>
       </div>
       <p className={styles.boundary}>
-        This checks the exact Base contract call. It cannot sign, submit an
-        order, approve USDC, or send a transaction.
+        This checks the saved goal’s exact contract call. It cannot sign, submit
+        an order, approve tokens, or send a transaction.
       </p>
       <p aria-live="polite" className={styles.result} role="status">
         {message}

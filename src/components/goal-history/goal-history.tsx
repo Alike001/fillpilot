@@ -11,6 +11,12 @@ type Goal = {
   minimumBuyAmount: string;
   deadline: string;
   state: string;
+  market: {
+    sellSymbol: string;
+    buySymbol: string;
+    sellDecimals: number;
+    buyDecimals: number;
+  };
   latestExecution?: { state: string; simulation?: { gasEstimate?: string } };
 };
 
@@ -58,9 +64,14 @@ export function GoalHistory() {
         >
           <div className={styles.intent}>
             <span className={styles.index}>Goal {goal.id.slice(0, 8)}</span>
-            <strong>{formatAmount(goal.sellAmount, 6)} USDC → WETH</strong>
+            <strong>
+              {formatAmount(goal.sellAmount, goal.market.sellDecimals)}{" "}
+              {goal.market.sellSymbol} → {goal.market.buySymbol}
+            </strong>
             <span>
-              Protected floor {formatAmount(goal.minimumBuyAmount, 18)} WETH
+              Protected floor{" "}
+              {formatAmount(goal.minimumBuyAmount, goal.market.buyDecimals)}{" "}
+              {goal.market.buySymbol}
             </span>
           </div>
           <div>
