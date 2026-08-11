@@ -67,13 +67,19 @@ export async function GET(
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Quote could not be read.";
+    const noLiquidity =
+      message === "Not Found" ||
+      message.includes("NoLiquidity") ||
+      message.includes("no route found");
     const unavailable = message === "fetch failed";
     return NextResponse.json(
       {
         status: "unavailable",
         error: unavailable
           ? "CoW could not be reached for this quote. No order, approval, execution, or transaction was created. Retry after confirming the local server has network access."
-          : message,
+          : noLiquidity
+            ? "CoW Sepolia has no live liquidity route for this test market. No quote, order, approval, execution, or transaction was created."
+            : message,
       },
       { status: unavailable ? 503 : 502 },
     );

@@ -1,5 +1,6 @@
 .next
 .env*
+contracts/lib/
 coverage
 dist
 drizzle/meta
