@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { OrderQuoteResponse } from "@cowprotocol/sdk-order-book";
 
 import { buildPresignOrder } from "./cow-order";
+import { executionNetwork } from "./execution-network";
 
 const NOW = new Date("2026-08-05T12:00:00.000Z");
 const INPUT = {
@@ -57,6 +58,19 @@ describe("canonical CoW PRESIGN order", () => {
     );
 
     expect(changed.uid).not.toBe(original.uid);
+  });
+
+  it("uses the selected Sepolia settlement and chain identity", async () => {
+    const network = executionNetwork("ethereum-sepolia");
+    const order = await buildPresignOrder(
+      INPUT,
+      quote({ sellToken: network.sellToken, buyToken: network.buyToken }),
+      NOW,
+      network,
+    );
+
+    expect(order.settlement).toBe(network.settlement);
+    expect(order.uid).toMatch(/^0x[a-f0-9]{112}$/i);
   });
 
   it("rejects a quote that does not return proceeds to the connected owner", async () => {

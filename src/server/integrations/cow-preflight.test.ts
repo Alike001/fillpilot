@@ -6,6 +6,7 @@ import {
   getValidatedCowQuote,
   validateCowPreflight,
 } from "./cow-preflight";
+import { executionNetwork } from "./execution-network";
 
 const NOW = new Date("2026-08-05T12:00:00.000Z");
 const INPUT = {
@@ -72,6 +73,33 @@ describe("CoW preflight", () => {
     await expect(getCowPreflight(INPUT, fakeApi, NOW)).rejects.toThrow(
       "controlled fake outage",
     );
+  });
+
+  it("uses the Ethereum Sepolia market only when that profile is explicit", async () => {
+    const network = executionNetwork("ethereum-sepolia");
+    let request: unknown;
+    const fakeApi = {
+      async getQuote(input: unknown) {
+        request = input;
+        return response({
+          quote: {
+            ...response().quote,
+            sellToken: network.sellToken,
+            buyToken: network.buyToken,
+          },
+        });
+      },
+    };
+
+    await expect(
+      getCowPreflight(INPUT, fakeApi, NOW, network),
+    ).resolves.toMatchObject({
+      verified: true,
+    });
+    expect(request).toMatchObject({
+      sellToken: network.sellToken,
+      buyToken: network.buyToken,
+    });
   });
 
   it("accepts a fresh verified Base quote that protects the exact floor", () => {

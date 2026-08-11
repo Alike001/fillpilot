@@ -5,20 +5,16 @@ import {
 } from "@cowprotocol/sdk-contracts-ts";
 import { ViemAdapter } from "@cowprotocol/sdk-viem-adapter";
 import { setGlobalAdapter } from "@cowprotocol/sdk-common";
-import {
-  COW_PROTOCOL_SETTLEMENT_CONTRACT_ADDRESS,
-  SupportedChainId,
-  type Address,
-} from "@cowprotocol/sdk-config";
+import { type Address } from "@cowprotocol/sdk-config";
 import type { OrderQuoteResponse } from "@cowprotocol/sdk-order-book";
 import { createPublicClient, custom, type PublicClient } from "viem";
 import { base } from "viem/chains";
 
 import { validateCowPreflight, type CowPreflightInput } from "./cow-preflight";
-
-const BASE_SETTLEMENT = COW_PROTOCOL_SETTLEMENT_CONTRACT_ADDRESS[
-  SupportedChainId.BASE
-] as Address;
+import {
+  executionNetwork,
+  type ExecutionNetworkProfile,
+} from "./execution-network";
 
 type ContractsOrder = Parameters<typeof OrderSigningUtils.generateOrderId>[1];
 
@@ -46,9 +42,10 @@ export async function buildPresignOrder(
   input: CowPreflightInput,
   response: OrderQuoteResponse,
   now = new Date(),
+  network: ExecutionNetworkProfile = executionNetwork(),
 ): Promise<PresignOrder> {
   const requestedValidTo = Math.floor(input.deadline.getTime() / 1000);
-  validateCowPreflight(response, input, requestedValidTo, now);
+  validateCowPreflight(response, input, requestedValidTo, now, network);
 
   const quote = response.quote;
   const appDataHash =
@@ -78,7 +75,7 @@ export async function buildPresignOrder(
     buyTokenBalance: toBuyBalance(quote.buyTokenBalance),
   };
   const { orderId } = await OrderSigningUtils.generateOrderId(
-    SupportedChainId.BASE,
+    network.cowChainId,
     order,
     { owner: input.owner },
   );
@@ -88,7 +85,7 @@ export async function buildPresignOrder(
     throw new Error("CoW returned an invalid order UID");
   }
 
-  return { order, owner: input.owner, settlement: BASE_SETTLEMENT, uid };
+  return { order, owner: input.owner, settlement: network.settlement, uid };
 }
 
 function toSellBalance(balance: string | undefined): OrderBalance {

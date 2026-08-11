@@ -6,10 +6,12 @@ import {
   type OrderQuoteRequest,
   type OrderQuoteResponse,
 } from "@cowprotocol/sdk-order-book";
-import { SupportedChainId, type Address } from "@cowprotocol/sdk-config";
+import type { Address } from "@cowprotocol/sdk-config";
 
-const BASE_USDC = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as Address;
-const BASE_WETH = "0x4200000000000000000000000000000000000006" as Address;
+import {
+  executionNetwork,
+  type ExecutionNetworkProfile,
+} from "./execution-network";
 
 export type CowPreflightInput = {
   readonly owner: Address;
@@ -33,28 +35,33 @@ export type CowPreflightError =
 
 type QuoteApi = Pick<OrderBookApi, "getQuote">;
 
-export function createCowQuoteApi(): QuoteApi {
-  return new OrderBookApi({ chainId: SupportedChainId.BASE });
+export function createCowQuoteApi(
+  network: ExecutionNetworkProfile = executionNetwork(),
+): QuoteApi {
+  return new OrderBookApi({ chainId: network.cowChainId });
 }
 
 export async function getCowPreflight(
   input: CowPreflightInput,
-  api = createCowQuoteApi(),
+  api: QuoteApi | undefined = undefined,
   now = new Date(),
+  network: ExecutionNetworkProfile = executionNetwork(),
 ): Promise<CowPreflight> {
-  const response = await getValidatedCowQuote(input, api, now);
+  const response = await getValidatedCowQuote(input, api, now, network);
   return validateCowPreflight(
     response,
     input,
     Math.floor(input.deadline.getTime() / 1000),
     now,
+    network,
   );
 }
 
 export async function getValidatedCowQuote(
   input: CowPreflightInput,
-  api = createCowQuoteApi(),
+  api: QuoteApi | undefined = undefined,
   now = new Date(),
+  network: ExecutionNetworkProfile = executionNetwork(),
 ): Promise<OrderQuoteResponse> {
   const validTo = Math.floor(input.deadline.getTime() / 1000);
   if (
@@ -64,10 +71,10 @@ export async function getValidatedCowQuote(
     throw new Error("quote-expired" satisfies CowPreflightError);
   }
 
-  const response = await api.getQuote({
+  const response = await (api ?? createCowQuoteApi(network)).getQuote({
     kind: OrderQuoteSideKindSell.SELL,
-    sellToken: BASE_USDC,
-    buyToken: BASE_WETH,
+    sellToken: network.sellToken,
+    buyToken: network.buyToken,
     sellAmountBeforeFee: input.sellAmount.toString(),
     from: input.owner,
     receiver: input.owner,
@@ -76,7 +83,7 @@ export async function getValidatedCowQuote(
     signingScheme: SigningScheme.PRESIGN,
   } satisfies OrderQuoteRequest);
 
-  validateCowPreflight(response, input, validTo, now);
+  validateCowPreflight(response, input, validTo, now, network);
   return response;
 }
 
@@ -85,6 +92,7 @@ export function validateCowPreflight(
   input: CowPreflightInput,
   requestedValidTo: number,
   now = new Date(),
+  network: ExecutionNetworkProfile = executionNetwork(),
 ): CowPreflight {
   const quoteExpiresAt = new Date(response.expiration);
   const quote = response.quote;
@@ -92,8 +100,8 @@ export function validateCowPreflight(
     !response.verified ||
     !Number.isFinite(quoteExpiresAt.getTime()) ||
     quoteExpiresAt <= now ||
-    quote.sellToken.toLowerCase() !== BASE_USDC.toLowerCase() ||
-    quote.buyToken.toLowerCase() !== BASE_WETH.toLowerCase() ||
+    quote.sellToken.toLowerCase() !== network.sellToken.toLowerCase() ||
+    quote.buyToken.toLowerCase() !== network.buyToken.toLowerCase() ||
     quote.validTo > requestedValidTo ||
     (response.from && response.from.toLowerCase() !== input.owner.toLowerCase())
   ) {

@@ -11,6 +11,8 @@ export type ExecutionNetworkProfile = Readonly<{
   chainId: number;
   cowChainId: SupportedChainId;
   settlement: Address;
+  sellToken: Address;
+  buyToken: Address;
   label: string;
   isTestnet: boolean;
 }>;
@@ -23,6 +25,8 @@ const profiles: Record<FillPilotExecutionNetwork, ExecutionNetworkProfile> = {
     settlement: COW_PROTOCOL_SETTLEMENT_CONTRACT_ADDRESS[
       SupportedChainId.BASE
     ] as Address,
+    sellToken: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as Address,
+    buyToken: "0x4200000000000000000000000000000000000006" as Address,
     label: "Base mainnet",
     isTestnet: false,
   },
@@ -33,6 +37,8 @@ const profiles: Record<FillPilotExecutionNetwork, ExecutionNetworkProfile> = {
     settlement: COW_PROTOCOL_SETTLEMENT_CONTRACT_ADDRESS[
       SupportedChainId.SEPOLIA
     ] as Address,
+    sellToken: "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14" as Address,
+    buyToken: "0xbe72E441BF55620febc26715db68d3494213D8Cb" as Address,
     label: "Ethereum Sepolia",
     isTestnet: true,
   },
