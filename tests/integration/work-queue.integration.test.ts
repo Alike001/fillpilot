@@ -13,8 +13,6 @@ let client: ReturnType<typeof postgres> | undefined;
 
 describeWithDatabase("PostgreSQL work queue", () => {
   beforeAll(() => {
-    process.env.NODE_ENV = "test";
-    process.env.TEST_DATABASE_URL = databaseUrl;
     client = postgres(databaseUrl as string, { max: 1 });
   });
 
