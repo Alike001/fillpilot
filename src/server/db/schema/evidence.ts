@@ -26,20 +26,29 @@ export const workState = pgEnum("work_state", [
   "DEAD",
 ]);
 
-export const decisions = pgTable("decisions", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  goalId: uuid("goal_id")
-    .references(() => goals.id, { onDelete: "cascade" })
-    .notNull(),
-  ruleVersion: text("rule_version").notNull(),
-  inputHash: varchar("input_hash", { length: 66 }).notNull(),
-  inputs: jsonb("inputs").notNull(),
-  output: text("output").notNull(),
-  explanation: text("explanation").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-});
+export const decisions = pgTable(
+  "decisions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    goalId: uuid("goal_id")
+      .references(() => goals.id, { onDelete: "cascade" })
+      .notNull(),
+    ruleVersion: text("rule_version").notNull(),
+    inputHash: varchar("input_hash", { length: 66 }).notNull(),
+    inputs: jsonb("inputs").notNull(),
+    output: text("output").notNull(),
+    explanation: text("explanation").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("decisions_goal_input_hash_idx").on(
+      table.goalId,
+      table.inputHash,
+    ),
+  ],
+);
 
 export const keeperhubExecutions = pgTable(
   "keeperhub_executions",

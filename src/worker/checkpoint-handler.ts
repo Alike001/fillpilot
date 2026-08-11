@@ -1,6 +1,6 @@
 import { checkpointAt, type QuoteSnapshot } from "@/domain/checkpoint";
 import { isTerminal, type Goal } from "@/domain/goal";
-import { timestampMs, type TimestampMs } from "@/domain/types";
+import { timestampMs, type OrderUid, type TimestampMs } from "@/domain/types";
 import {
   type LeasedWork,
   WorkFailure,
@@ -14,8 +14,8 @@ import {
 import { toFillPilotOrderState } from "./cow-order-state";
 
 export type PostedOrderCheckpoint = {
-  readonly cowStatus: Parameters<typeof toFillPilotOrderState>[0];
   readonly goal: Goal;
+  readonly orderUid: OrderUid;
 };
 
 export type CheckpointContextSource = {
@@ -24,6 +24,12 @@ export type CheckpointContextSource = {
 
 export type FreshQuoteSource = {
   read(goal: Goal, now: Date): Promise<QuoteSnapshot>;
+};
+
+export type CowOrderStatusSource = {
+  read(
+    orderUid: OrderUid,
+  ): Promise<Parameters<typeof toFillPilotOrderState>[0]>;
 };
 
 export type CheckpointDecisionStore = {
@@ -52,6 +58,7 @@ function needsFreshQuote(
 export class CheckpointHandler implements WorkHandler {
   constructor(
     private readonly contextSource: CheckpointContextSource,
+    private readonly statusSource: CowOrderStatusSource,
     private readonly quoteSource: FreshQuoteSource,
     private readonly decisionStore: CheckpointDecisionStore,
     private readonly clock: () => Date = () => new Date(),
@@ -70,7 +77,9 @@ export class CheckpointHandler implements WorkHandler {
     const now = timestampMs(nowDate.getTime());
     let orderState;
     try {
-      orderState = toFillPilotOrderState(context.cowStatus);
+      orderState = toFillPilotOrderState(
+        await this.statusSource.read(context.orderUid),
+      );
     } catch (error) {
       throw new WorkFailure(
         "VALIDATION",
