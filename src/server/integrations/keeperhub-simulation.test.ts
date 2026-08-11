@@ -52,6 +52,7 @@ describe("KeeperHub simulation boundary", () => {
         goalId: REQUEST.goalId,
         idempotencyKey: `simulation:${REQUEST.orderUid}`,
         operation: "presign",
+        chainId: 8453,
       }),
     );
   });
@@ -70,12 +71,30 @@ describe("KeeperHub simulation boundary", () => {
 
     expect(record).toHaveBeenCalledWith(
       expect.objectContaining({
+        chainId: 8453,
         simulation: {
           status: "simulated",
           gasEstimate: "65000",
           orderUid: REQUEST.orderUid,
         },
       }),
+    );
+  });
+
+  it("preserves an explicit Sepolia chain ID for durable evidence", async () => {
+    const record = vi.fn().mockResolvedValue(undefined);
+    await simulateAndRecord(
+      {
+        simulate: vi
+          .fn()
+          .mockResolvedValue({ status: "simulated", gasEstimate: 65_000n }),
+      },
+      { record },
+      { ...REQUEST, chainId: 11155111 },
+    );
+
+    expect(record).toHaveBeenCalledWith(
+      expect.objectContaining({ chainId: 11155111 }),
     );
   });
 });

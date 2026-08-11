@@ -31,6 +31,7 @@ export type SimulationRecorder = {
     goalId: string;
     idempotencyKey: string;
     operation: string;
+    chainId: number;
     simulation: StoredSimulationEvidence;
   }): Promise<unknown>;
 };
@@ -61,6 +62,7 @@ export async function simulateAndRecord(
     goalId: request.goalId,
     idempotencyKey: `simulation:${request.orderUid}`,
     operation: "presign",
+    chainId: request.chainId,
     simulation: toStoredSimulationEvidence(result, request.orderUid),
   });
   return result;

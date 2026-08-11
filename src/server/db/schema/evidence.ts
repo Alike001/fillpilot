@@ -59,6 +59,7 @@ export const keeperhubExecutions = pgTable(
       .notNull(),
     operation: text("operation").notNull(),
     idempotencyKey: text("idempotency_key").notNull(),
+    chainId: integer("chain_id").default(8453).notNull(),
     simulation: jsonb("simulation").notNull(),
     executionId: text("execution_id"),
     state: executionState("state").default("SIMULATED").notNull(),

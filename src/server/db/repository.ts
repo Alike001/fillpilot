@@ -180,6 +180,7 @@ export async function recordSimulationEvidence(input: {
   goalId: string;
   idempotencyKey: string;
   operation: string;
+  chainId: number;
   simulation: unknown;
 }) {
   const { client, db } = createDatabase();
@@ -190,6 +191,7 @@ export async function recordSimulationEvidence(input: {
         goalId: input.goalId,
         operation: input.operation,
         idempotencyKey: input.idempotencyKey,
+        chainId: input.chainId,
         simulation: input.simulation,
         state: "SIMULATED",
       })

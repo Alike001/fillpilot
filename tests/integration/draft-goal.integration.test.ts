@@ -85,6 +85,7 @@ describeWithDatabase("draft goal persistence", () => {
       goalId: saved.id,
       idempotencyKey: `simulation:${saved.id}`,
       operation: "presign",
+      chainId: 8453,
       simulation: { status: "simulated" },
     };
     await recordSimulationEvidence(input);
