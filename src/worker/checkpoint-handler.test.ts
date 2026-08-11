@@ -12,6 +12,8 @@ const work = { id: "work-1", kind: "CHECKPOINT", goalId: "goal-1" };
 function context() {
   return {
     orderUid: orderUid(`0x${"ab".repeat(56)}`),
+    owner: "0x1111111111111111111111111111111111111111" as const,
+    sellAmount: tokenAmount(1_000_000n),
     goal: {
       id: "goal-1",
       state: "WATCHING" as const,

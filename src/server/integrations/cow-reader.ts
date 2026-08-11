@@ -1,5 +1,6 @@
 import { OrderBookApi, OrderBookApiError } from "@cowprotocol/sdk-order-book";
 import { SupportedChainId, type Address } from "@cowprotocol/sdk-config";
+import type { OrderUid } from "@/domain/types";
 
 export type CowReadError = {
   kind: "not-found" | "rate-limited" | "unavailable" | "malformed";
@@ -15,17 +16,19 @@ export async function readCowOrders(owner: Address, api = createCowReader()) {
 }
 
 export async function readCowOrder(
-  orderUid: `0x${string}`,
+  orderUid: OrderUid,
   api = createCowReader(),
 ) {
-  return mapCowRead(() => api.getOrder(orderUid));
+  return mapCowRead(() => api.getOrder(orderUid as `0x${string}`));
 }
 
 export async function readCowTrades(
-  orderUid: `0x${string}`,
+  orderUid: OrderUid,
   api = createCowReader(),
 ) {
-  return mapCowRead(() => api.getTrades({ orderUid }));
+  return mapCowRead(() =>
+    api.getTrades({ orderUid: orderUid as `0x${string}` }),
+  );
 }
 
 async function mapCowRead<T>(read: () => Promise<T>): Promise<T> {

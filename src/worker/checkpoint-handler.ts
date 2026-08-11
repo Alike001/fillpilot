@@ -1,6 +1,12 @@
 import { checkpointAt, type QuoteSnapshot } from "@/domain/checkpoint";
 import { isTerminal, type Goal } from "@/domain/goal";
-import { timestampMs, type OrderUid, type TimestampMs } from "@/domain/types";
+import {
+  timestampMs,
+  type OrderUid,
+  type TimestampMs,
+  type TokenAmount,
+} from "@/domain/types";
+import type { Address } from "@cowprotocol/sdk-config";
 import {
   type LeasedWork,
   WorkFailure,
@@ -16,6 +22,8 @@ import { toFillPilotOrderState } from "./cow-order-state";
 export type PostedOrderCheckpoint = {
   readonly goal: Goal;
   readonly orderUid: OrderUid;
+  readonly owner: Address;
+  readonly sellAmount: TokenAmount;
 };
 
 export type CheckpointContextSource = {
@@ -23,7 +31,7 @@ export type CheckpointContextSource = {
 };
 
 export type FreshQuoteSource = {
-  read(goal: Goal, now: Date): Promise<QuoteSnapshot>;
+  read(context: PostedOrderCheckpoint, now: Date): Promise<QuoteSnapshot>;
 };
 
 export type CowOrderStatusSource = {
@@ -88,7 +96,7 @@ export class CheckpointHandler implements WorkHandler {
     }
 
     const quote = needsFreshQuote(context.goal, now, orderState)
-      ? await this.quoteSource.read(context.goal, nowDate)
+      ? await this.quoteSource.read(context, nowDate)
       : undefined;
     const evaluation = evaluateCheckpoint({
       goal: context.goal,

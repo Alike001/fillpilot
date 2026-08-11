@@ -1,4 +1,5 @@
 import { desc, eq } from "drizzle-orm";
+import type { Address } from "@cowprotocol/sdk-config";
 
 import { orderUid, timestampMs, tokenAmount } from "@/domain/types";
 import type {
@@ -8,7 +9,7 @@ import type {
 import type { StoredCheckpointDecision } from "@/worker/checkpoint-decision";
 
 import { createDatabase } from "./client";
-import { decisions, goals, orders } from "./schema";
+import { connections, decisions, goals, orders } from "./schema";
 
 export class PostgresCheckpointStore
   implements CheckpointContextSource, CheckpointDecisionStore
@@ -21,11 +22,14 @@ export class PostgresCheckpointStore
           deadline: goals.deadline,
           goalId: goals.id,
           minimumBuyAmount: goals.minimumBuyAmount,
+          owner: connections.walletAddress,
           replacementCount: goals.replacementCount,
+          sellAmount: goals.sellAmount,
           state: goals.state,
           uid: orders.uid,
         })
         .from(goals)
+        .innerJoin(connections, eq(connections.id, goals.connectionId))
         .innerJoin(orders, eq(orders.goalId, goals.id))
         .where(eq(goals.id, goalId))
         .orderBy(desc(orders.createdAt))
@@ -41,6 +45,8 @@ export class PostgresCheckpointStore
           replacementCount: row.replacementCount,
         },
         orderUid: orderUid(row.uid),
+        owner: row.owner as Address,
+        sellAmount: tokenAmount(BigInt(row.sellAmount)),
       };
     } finally {
       await client.end();
