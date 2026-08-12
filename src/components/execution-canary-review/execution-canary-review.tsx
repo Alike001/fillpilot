@@ -12,7 +12,6 @@ type Review = {
   challenge: string;
   value: string;
   expectedEvent: string;
-  sourceRepository: string;
   boundary: string;
 };
 
@@ -238,11 +237,6 @@ export function ExecutionCanaryReview() {
         KeeperHub. It has one fixed idempotency key and cannot deploy a
         contract, approve tokens, or place a CoW order.
       </p>
-      {review ? (
-        <a href={review.sourceRepository} target="_blank" rel="noreferrer">
-          Inspect the public canary source ↗
-        </a>
-      ) : null}
     </section>
   );
 }

@@ -23,7 +23,6 @@ export async function GET() {
     chainId: PUBLIC_BASE_SEPOLIA_EXECUTION_CANARY.chainId,
     contract: PUBLIC_BASE_SEPOLIA_EXECUTION_CANARY.contract,
     observedCodeHash: check.observedCodeHash,
-    sourceRepository: PUBLIC_BASE_SEPOLIA_EXECUTION_CANARY.sourceRepository,
     boundary:
       "A public Base Sepolia ping canary has verified runtime code. It is external execution evidence only, not a FillPilot deployment, CoW order, token approval, or permission to write.",
   });

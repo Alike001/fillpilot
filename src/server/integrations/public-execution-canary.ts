@@ -8,7 +8,6 @@ export const PUBLIC_BASE_SEPOLIA_EXECUTION_CANARY = {
     "0x753157870ee9e692c7e35e0890fad801fd30fc4674a74a62a7526758da649dd0" as const,
   functionName: "ping",
   abi: parseAbi(["function ping(bytes32 challenge)"]),
-  sourceRepository: "https://github.com/winsznx/keeperhub-flightcheck",
 } as const;
 
 const baseSepoliaRpcUrl = "https://sepolia.base.org";
@@ -55,7 +54,6 @@ export type PublicExecutionCanaryReview = Readonly<{
   challenge: `0x${string}`;
   value: "0";
   expectedEvent: "Flightcheck(address indexed sender, bytes32 indexed challenge, uint256 chainId)";
-  sourceRepository: string;
   boundary: string;
 }>;
 
@@ -93,7 +91,6 @@ export function buildPublicExecutionCanaryReview(): PublicExecutionCanaryReview 
     value: "0",
     expectedEvent:
       "Flightcheck(address indexed sender, bytes32 indexed challenge, uint256 chainId)",
-    sourceRepository: PUBLIC_BASE_SEPOLIA_EXECUTION_CANARY.sourceRepository,
     boundary:
       "Review only. This prepares a zero-value public-canary ping. It cannot submit, approve tokens, place a CoW order, deploy a contract, or authorize a transaction.",
   };
