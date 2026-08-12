@@ -8,7 +8,7 @@ import styles from "./goal-preflight.module.css";
 
 function formatToken(value: string, decimals: number): string {
   try {
-    return formatTokenAmount(BigInt(value), 18);
+    return formatTokenAmount(BigInt(value), decimals);
   } catch {
     return value;
   }

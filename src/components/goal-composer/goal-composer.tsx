@@ -31,11 +31,12 @@ export function GoalComposer({ market }: { market: GoalMarket }) {
   const [submitted, setSubmitted] = useState(false);
   const [savedGoalId, setSavedGoalId] = useState<string>();
   const [saveStatus, setSaveStatus] = useState<string>();
+  const [validationNow] = useState(() => Date.now());
 
   const validation = useMemo(() => {
     try {
       return {
-        draft: validateGoalDraft(input, Date.now(), market),
+        draft: validateGoalDraft(input, validationNow, market),
         error: undefined,
       };
     } catch (error) {
@@ -45,7 +46,7 @@ export function GoalComposer({ market }: { market: GoalMarket }) {
           error instanceof Error ? error.message : "Goal inputs are invalid",
       };
     }
-  }, [input, market]);
+  }, [input, market, validationNow]);
 
   function update(field: keyof GoalDraftInput, value: string) {
     setSubmitted(false);
