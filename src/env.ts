@@ -115,3 +115,12 @@ export function requireEthereumSepoliaTestnetWriteReady(
   }
   return rpcUrl;
 }
+
+/** Testnet writes are off unless an operator explicitly enables them. */
+export function requireTestnetWritesEnabled(env = parseServerEnv()): void {
+  if (!env.ENABLE_TESTNET_WRITES) {
+    throw new Error(
+      "Testnet writes are disabled. Set ENABLE_TESTNET_WRITES=true only after explicit operator approval.",
+    );
+  }
+}

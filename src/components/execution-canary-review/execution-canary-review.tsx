@@ -21,7 +21,9 @@ export function ExecutionCanaryReview() {
   const [message, setMessage] = useState(
     "No external canary call has been prepared.",
   );
-  const [loading, setLoading] = useState<"review" | "simulation">();
+  const [loading, setLoading] = useState<
+    "review" | "simulation" | "submission"
+  >();
 
   async function loadReview() {
     setLoading("review");
@@ -75,6 +77,39 @@ export function ExecutionCanaryReview() {
     }
   }
 
+  async function submitApprovedPing() {
+    setLoading("submission");
+    try {
+      const response = await fetch("/api/testnet/execution-canary/submit", {
+        method: "POST",
+      });
+      const payload = (await response.json()) as {
+        submission?: {
+          executionId: string;
+          status: string;
+          idempotentReplay: boolean;
+        };
+        error?: string;
+        boundary?: string;
+      };
+      if (!response.ok || !payload.submission) {
+        setMessage(
+          payload.error ?? "Approved canary submission is unavailable.",
+        );
+        return;
+      }
+      setMessage(
+        `KeeperHub accepted execution ${payload.submission.executionId} with status ${payload.submission.status}${payload.submission.idempotentReplay ? " (idempotent replay)" : ""}. ${payload.boundary}`,
+      );
+    } catch {
+      setMessage(
+        "FillPilot could not reach the approved canary submission route.",
+      );
+    } finally {
+      setLoading(undefined);
+    }
+  }
+
   return (
     <section className={styles.panel} aria-labelledby="execution-canary-title">
       <div className={styles.heading}>
@@ -103,6 +138,16 @@ export function ExecutionCanaryReview() {
           disabled={!review || loading !== undefined}
         >
           {loading === "simulation" ? "Simulating…" : "Simulate with KeeperHub"}
+        </button>
+        <button
+          className={styles.submit}
+          type="button"
+          onClick={submitApprovedPing}
+          disabled={!review || loading !== undefined}
+        >
+          {loading === "submission"
+            ? "Submitting approved ping…"
+            : "Submit approved testnet ping"}
         </button>
       </div>
       {review ? (
@@ -135,6 +180,11 @@ export function ExecutionCanaryReview() {
       ) : null}
       <p className={styles.message} aria-live="polite">
         {message}
+      </p>
+      <p className={styles.writeNotice}>
+        This button sends only the reviewed zero-value Base Sepolia ping through
+        KeeperHub. It has one fixed idempotency key and cannot deploy a
+        contract, approve tokens, or place a CoW order.
       </p>
       {review ? (
         <a href={review.sourceRepository} target="_blank" rel="noreferrer">

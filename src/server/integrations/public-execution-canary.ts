@@ -29,6 +29,14 @@ type KeeperHubSimulationResponse = {
   readonly error?: string;
 };
 
+type KeeperHubExecutionResponse = {
+  readonly executionId?: string;
+  readonly status?: string;
+  readonly success?: boolean;
+  readonly error?: string;
+  readonly idempotentReplay?: boolean;
+};
+
 export type PublicExecutionCanaryCheck =
   | {
       readonly status: "verified-external-canary";
@@ -54,6 +62,15 @@ export type PublicExecutionCanaryReview = Readonly<{
 export type PublicExecutionCanarySimulation =
   | { readonly status: "simulated"; readonly gasEstimate: bigint }
   | { readonly status: "rejected"; readonly reason: string };
+
+export type PublicExecutionCanarySubmission = Readonly<{
+  executionId: string;
+  status: string;
+  idempotentReplay: boolean;
+}>;
+
+export const PUBLIC_EXECUTION_CANARY_IDEMPOTENCY_KEY =
+  "fillpilot:public-base-sepolia-canary:v1";
 
 /**
  * Builds a stable, human-reviewable zero-value call. It prepares bytes only,
@@ -125,6 +142,53 @@ export async function simulatePublicExecutionCanary(
     );
   }
   return { status: "simulated", gasEstimate: BigInt(payload.gasEstimate) };
+}
+
+/**
+ * The sole public-canary write adapter. It has no configurable destination,
+ * transfers zero ETH, and refuses to run until the server testnet gate is on.
+ */
+export async function submitPublicExecutionCanary(
+  apiKey: string,
+  writesEnabled: boolean,
+  fetcher: FetchLike = fetch,
+): Promise<PublicExecutionCanarySubmission> {
+  if (!writesEnabled) {
+    throw new Error(
+      "Testnet writes are disabled. Set ENABLE_TESTNET_WRITES=true only after explicit operator approval.",
+    );
+  }
+  const review = buildPublicExecutionCanaryReview();
+  const response = await fetcher(
+    "https://app.keeperhub.com/api/execute/contract-call",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "Idempotency-Key": PUBLIC_EXECUTION_CANARY_IDEMPOTENCY_KEY,
+      },
+      body: JSON.stringify({
+        contractAddress: review.contract,
+        chainId: review.chainId,
+        functionName: PUBLIC_BASE_SEPOLIA_EXECUTION_CANARY.functionName,
+        functionArgs: JSON.stringify([review.challenge]),
+        abi: JSON.stringify(PUBLIC_BASE_SEPOLIA_EXECUTION_CANARY.abi),
+      }),
+    },
+  );
+  const payload = (await response.json()) as KeeperHubExecutionResponse;
+  if (!response.ok || payload.success === false || !payload.executionId) {
+    throw new Error(
+      payload.error ??
+        `KeeperHub execution failed with HTTP ${response.status}.`,
+    );
+  }
+  return {
+    executionId: payload.executionId,
+    status: payload.status ?? "submitted",
+    idempotentReplay: payload.idempotentReplay === true,
+  };
 }
 
 /**

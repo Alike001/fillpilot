@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   buildPublicExecutionCanaryReview,
+  PUBLIC_EXECUTION_CANARY_IDEMPOTENCY_KEY,
   PUBLIC_BASE_SEPOLIA_EXECUTION_CANARY,
   simulatePublicExecutionCanary,
+  submitPublicExecutionCanary,
   verifyPublicExecutionCanary,
 } from "./public-execution-canary";
 
@@ -82,5 +84,41 @@ describe("verifyPublicExecutionCanary", () => {
       simulate: true,
     });
     expect(init.headers).not.toHaveProperty("Idempotency-Key");
+  });
+
+  it("fails closed before a broadcast request when testnet writes are disabled", async () => {
+    const fetcher = vi.fn();
+    await expect(
+      submitPublicExecutionCanary("kh_test_123", false, fetcher),
+    ).rejects.toThrow("disabled");
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it("submits the exact reviewed ping once with a stable idempotency key", async () => {
+    const fetcher = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          executionId: "direct_canary_123",
+          status: "pending",
+        }),
+        { status: 202 },
+      ),
+    );
+    await expect(
+      submitPublicExecutionCanary("kh_test_123", true, fetcher),
+    ).resolves.toEqual({
+      executionId: "direct_canary_123",
+      status: "pending",
+      idempotentReplay: false,
+    });
+    const [, init] = fetcher.mock.calls[0] as [string, RequestInit];
+    expect(init.headers).toMatchObject({
+      "Idempotency-Key": PUBLIC_EXECUTION_CANARY_IDEMPOTENCY_KEY,
+    });
+    expect(JSON.parse(String(init.body))).toMatchObject({
+      contractAddress: PUBLIC_BASE_SEPOLIA_EXECUTION_CANARY.contract,
+      chainId: 84532,
+      functionName: "ping",
+    });
   });
 });
