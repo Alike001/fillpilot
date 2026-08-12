@@ -1,5 +1,6 @@
 import { FoundationSurface } from "@/components/foundation-surface";
 import { ConnectionDoctor } from "@/components/connection-doctor/connection-doctor";
+import { ExecutionCanaryReview } from "@/components/execution-canary-review/execution-canary-review";
 import { GoalComposer } from "@/components/goal-composer/goal-composer";
 import { selectedExecutionNetwork } from "@/server/integrations/execution-network";
 
@@ -14,6 +15,7 @@ export default function NewGoalPage() {
       <Suspense fallback={null}>
         <ConnectionDoctor />
       </Suspense>
+      <ExecutionCanaryReview />
       <GoalComposer
         market={{
           network: profile.label,

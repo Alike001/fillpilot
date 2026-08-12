@@ -20,6 +20,15 @@ type RpcResponse = {
   readonly error?: { readonly message?: string };
 };
 
+type KeeperHubSimulationResponse = {
+  readonly success?: boolean;
+  readonly status?: string;
+  readonly gasEstimate?: string;
+  readonly wouldRevert?: boolean;
+  readonly revertReason?: string;
+  readonly error?: string;
+};
+
 export type PublicExecutionCanaryCheck =
   | {
       readonly status: "verified-external-canary";
@@ -41,6 +50,10 @@ export type PublicExecutionCanaryReview = Readonly<{
   sourceRepository: string;
   boundary: string;
 }>;
+
+export type PublicExecutionCanarySimulation =
+  | { readonly status: "simulated"; readonly gasEstimate: bigint }
+  | { readonly status: "rejected"; readonly reason: string };
 
 /**
  * Builds a stable, human-reviewable zero-value call. It prepares bytes only,
@@ -67,6 +80,51 @@ export function buildPublicExecutionCanaryReview(): PublicExecutionCanaryReview 
     boundary:
       "Review only. This prepares a zero-value public-canary ping. It cannot submit, approve tokens, place a CoW order, deploy a contract, or authorize a transaction.",
   };
+}
+
+/**
+ * Uses KeeperHub's simulation mode for the reviewed bytes only. There is no
+ * execution flag and this function cannot broadcast a transaction.
+ */
+export async function simulatePublicExecutionCanary(
+  apiKey: string,
+  fetcher: FetchLike = fetch,
+): Promise<PublicExecutionCanarySimulation> {
+  const review = buildPublicExecutionCanaryReview();
+  const response = await fetcher(
+    "https://app.keeperhub.com/api/execute/contract-call",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contractAddress: review.contract,
+        chainId: review.chainId,
+        functionName: PUBLIC_BASE_SEPOLIA_EXECUTION_CANARY.functionName,
+        functionArgs: JSON.stringify([review.challenge]),
+        abi: JSON.stringify(PUBLIC_BASE_SEPOLIA_EXECUTION_CANARY.abi),
+        simulate: true,
+      }),
+    },
+  );
+  const payload = (await response.json()) as KeeperHubSimulationResponse;
+  if (!response.ok || payload.success === false || payload.wouldRevert) {
+    return {
+      status: "rejected",
+      reason:
+        payload.revertReason ??
+        payload.error ??
+        `KeeperHub simulation failed with HTTP ${response.status}.`,
+    };
+  }
+  if (payload.status !== "simulated" || !payload.gasEstimate) {
+    throw new Error(
+      "KeeperHub returned an invalid public-canary simulation response.",
+    );
+  }
+  return { status: "simulated", gasEstimate: BigInt(payload.gasEstimate) };
 }
 
 /**

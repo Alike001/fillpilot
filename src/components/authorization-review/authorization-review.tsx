@@ -42,7 +42,7 @@ export function AuthorizationReview({ goalId }: { goalId: string }) {
   }, [goalId]);
 
   const simulation = goal?.latestExecution?.simulation;
-  if (!simulation?.orderUid || !simulation.gasEstimate) {
+  if (!goal || !simulation?.orderUid || !simulation.gasEstimate) {
     return (
       <section className={styles.pending} aria-label="Authorization review">
         <strong>Authorization review remains locked.</strong>

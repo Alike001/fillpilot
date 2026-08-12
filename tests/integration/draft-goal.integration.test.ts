@@ -2,6 +2,7 @@ import postgres from "postgres";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import { decryptSecret } from "../../src/server/connections/crypto";
+import { executionNetwork } from "../../src/server/integrations/execution-network";
 import {
   applyExecutionReconciliation,
   listGoalHistoryForWallet,
@@ -20,6 +21,7 @@ const fixtureWallets = [
   "0x2222222222222222222222222222222222222222",
   "0x3333333333333333333333333333333333333333",
 ] as const;
+const baseProfile = executionNetwork("base-mainnet");
 
 describeWithDatabase("draft goal persistence", () => {
   beforeAll(() => {
@@ -57,6 +59,7 @@ describeWithDatabase("draft goal persistence", () => {
         minimumBuyAmount: "0.004",
         deadline,
       },
+      baseProfile,
     );
 
     const [row] = await client!<
@@ -98,6 +101,7 @@ describeWithDatabase("draft goal persistence", () => {
         minimumBuyAmount: "0.001",
         deadline: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
       },
+      baseProfile,
     );
     const input = {
       goalId: saved.id,
@@ -137,6 +141,7 @@ describeWithDatabase("draft goal persistence", () => {
         minimumBuyAmount: "0.001",
         deadline: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
       },
+      baseProfile,
     );
     await recordSimulationEvidence({
       goalId: saved.id,
@@ -179,6 +184,7 @@ describeWithDatabase("draft goal persistence", () => {
         minimumBuyAmount: "0.001",
         deadline: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
       },
+      baseProfile,
     );
     const executionId = "direct_fillpilot_test_1";
     const submission = {

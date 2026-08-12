@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   buildPublicExecutionCanaryReview,
   PUBLIC_BASE_SEPOLIA_EXECUTION_CANARY,
+  simulatePublicExecutionCanary,
   verifyPublicExecutionCanary,
 } from "./public-execution-canary";
 
@@ -55,5 +56,31 @@ describe("verifyPublicExecutionCanary", () => {
       status: "unavailable-external-canary",
       reason: "Base Sepolia canary code read failed with HTTP 200.",
     });
+  });
+
+  it("asks KeeperHub to simulate the exact reviewed zero-value ping", async () => {
+    const fetcher = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          success: true,
+          status: "simulated",
+          gasEstimate: "48504",
+        }),
+        { status: 200 },
+      ),
+    );
+
+    await expect(
+      simulatePublicExecutionCanary("kh_test_123", fetcher),
+    ).resolves.toEqual({ status: "simulated", gasEstimate: 48504n });
+
+    const [, init] = fetcher.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(String(init.body))).toMatchObject({
+      contractAddress: PUBLIC_BASE_SEPOLIA_EXECUTION_CANARY.contract,
+      chainId: 84532,
+      functionName: "ping",
+      simulate: true,
+    });
+    expect(init.headers).not.toHaveProperty("Idempotency-Key");
   });
 });

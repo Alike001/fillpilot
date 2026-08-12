@@ -6,9 +6,11 @@ import {
   saveDraftGoal,
 } from "../../src/server/db/repository";
 import { PostgresWorkQueue } from "../../src/server/db/work-queue";
+import { executionNetwork } from "../../src/server/integrations/execution-network";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrl ? describe : describe.skip;
+const baseProfile = executionNetwork("base-mainnet");
 let client: ReturnType<typeof postgres> | undefined;
 
 describeWithDatabase("PostgreSQL work queue", () => {
@@ -33,6 +35,7 @@ describeWithDatabase("PostgreSQL work queue", () => {
         minimumBuyAmount: "0.001",
         deadline: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
       },
+      baseProfile,
     );
     const now = new Date("2026-08-11T12:00:00.000Z");
     await enqueueCheckpointWork({
