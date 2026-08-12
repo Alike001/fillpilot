@@ -81,7 +81,10 @@ async function readDatabaseAttempt(
       await db.delete(oauthAttempts).where(eq(oauthAttempts.id, id));
       return undefined;
     }
-    return JSON.parse(decryptSecret(row.encryptedState)) as ConnectionAuthState;
+    const attempt = JSON.parse(
+      decryptSecret(row.encryptedState),
+    ) as StoredAttempt;
+    return attempt.state;
   } catch {
     return undefined;
   } finally {
