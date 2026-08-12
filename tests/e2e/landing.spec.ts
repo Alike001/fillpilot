@@ -19,8 +19,11 @@ test("explains FillPilot and exposes its verified testnet proof", async ({
   await expect(
     page.getByRole("heading", {
       level: 1,
-      name: /Your fill has a deadline/i,
+      name: /Your fill has a deadline\. Start with a reliable execution foundation/i,
     }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/economic write lifecycle remains disabled/i),
   ).toBeVisible();
   await expect(page.getByText("Verified testnet execution")).toBeVisible();
   const overflow = await page.evaluate(

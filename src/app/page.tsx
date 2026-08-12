@@ -13,18 +13,18 @@ const stages = [
   ],
   [
     "02",
-    "Watch the fill",
-    "FillPilot checks the real CoW order instead of inventing its own status.",
+    "Define the watch policy",
+    "The planned worker watches the real CoW order instead of inventing its own status.",
   ],
   [
     "03",
-    "Adapt once",
-    "A deterministic checkpoint may replace the order once—never more.",
+    "Bound the adaptation",
+    "The deterministic policy allows one replacement at the checkpoint—never more.",
   ],
   [
     "04",
-    "Prove the outcome",
-    "KeeperHub execution and settlement evidence stay inspectable.",
+    "Prove the execution",
+    "KeeperHub execution evidence stays inspectable while the economic lifecycle remains protected.",
   ],
 ] as const;
 
@@ -35,11 +35,14 @@ export default function Home() {
       <section className={styles.hero}>
         <div className={styles.heroCopy}>
           <p className={styles.eyebrow}>Base · CoW Protocol · KeeperHub</p>
-          <h1>Your fill has a deadline. Give it one reliable way to adapt.</h1>
+          <h1>
+            Your fill has a deadline. Start with a reliable execution
+            foundation.
+          </h1>
           <p className={styles.lede}>
             FillPilot turns a USDC→WETH goal into a deterministic execution
-            path: watch the order, adapt once within your floor, and leave a
-            proof trail.
+            policy: define the floor, deadline, and one permitted adaptation,
+            then keep every proof boundary inspectable.
           </p>
           <div className={styles.actions}>
             <Link className={styles.primaryAction} href="/app/new">
@@ -56,6 +59,8 @@ export default function Home() {
           <p>
             One bounded Base Sepolia call completed through KeeperHub and has an
             independently verified receipt. It is not presented as a CoW fill.
+            The hosted economic write lifecycle remains disabled while this
+            foundation is reviewed.
           </p>
           <Link
             className={styles.signal}
