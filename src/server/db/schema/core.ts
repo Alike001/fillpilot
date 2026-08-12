@@ -43,6 +43,20 @@ export const connections = pgTable(
   ],
 );
 
+/**
+ * Short-lived encrypted state for the KeeperHub OAuth round trip.
+ *
+ * Vercel functions do not share a durable local filesystem, so this state
+ * belongs in Postgres rather than `/tmp` when DATABASE_URL is configured.
+ */
+export const oauthAttempts = pgTable("oauth_attempts", {
+  id: uuid("id").primaryKey(),
+  encryptedState: text("encrypted_state").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
 export const goals = pgTable("goals", {
   id: uuid("id").defaultRandom().primaryKey(),
   connectionId: uuid("connection_id")

@@ -15,6 +15,13 @@
       "when": 1786434974359,
       "tag": "0001_spotty_misty_knight",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786620000000,
+      "tag": "0002_oauth_attempt_storage",
+      "breakpoints": true
     }
   ]
 }
