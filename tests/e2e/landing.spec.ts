@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("explains FillPilot without claiming a fake execution", async ({
+test("explains FillPilot and exposes its verified testnet proof", async ({
   page,
 }) => {
   const runtimeErrors: string[] = [];
@@ -22,7 +22,7 @@ test("explains FillPilot without claiming a fake execution", async ({
       name: /Your fill has a deadline/i,
     }),
   ).toBeVisible();
-  await expect(page.getByText("No execution connected yet")).toBeVisible();
+  await expect(page.getByText("Verified testnet execution")).toBeVisible();
   const overflow = await page.evaluate(
     () =>
       document.documentElement.scrollWidth -
@@ -30,6 +30,22 @@ test("explains FillPilot without claiming a fake execution", async ({
   );
   expect(overflow).toBeLessThanOrEqual(1);
 
+  await page
+    .getByRole("link", { name: /Inspect the transaction proof/i })
+    .click();
+  await expect(page).toHaveURL(/\/proof\/base-sepolia-canary-20260812$/);
+  await expect(
+    page.getByRole("heading", {
+      level: 1,
+      name: /One KeeperHub testnet call, verified onchain/i,
+    }),
+  ).toBeVisible();
+  await expect(page.getByText("Succeeded")).toBeVisible();
+  await expect(
+    page.getByText("This is an external public Base Sepolia canary."),
+  ).toBeVisible();
+
+  await page.goto("/");
   await page.getByRole("link", { name: /Open the workspace/i }).click();
   await expect(page).toHaveURL(/\/app\/new$/);
   await expect(
@@ -58,7 +74,7 @@ test("keeps a goal quote read-only", async ({ page }) => {
     page.getByRole("button", { name: "Request fresh CoW quote" }),
   ).toBeVisible();
   await expect(
-    page.getByText(/cannot sign, submit an order, approve USDC/i),
+    page.getByText(/cannot sign, submit an order, approve tokens/i),
   ).toBeVisible();
   await expect(
     page.getByText(

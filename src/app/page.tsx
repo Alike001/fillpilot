@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { SiteHeader } from "@/components/site-header";
+import { VERIFIED_TESTNET_PROOF } from "@/server/proof/verified-testnet-proof";
 
 import styles from "./page.module.css";
 
@@ -51,15 +52,18 @@ export default function Home() {
         </div>
         <aside className={styles.status} aria-label="Current build status">
           <span className={styles.statusLabel}>Foundation status</span>
-          <strong>No execution connected yet</strong>
+          <strong>Verified testnet execution</strong>
           <p>
-            This milestone contains the real product foundation only. It does
-            not display a mock transaction, fill, or proof.
+            One bounded Base Sepolia call completed through KeeperHub and has an
+            independently verified receipt. It is not presented as a CoW fill.
           </p>
-          <div className={styles.signal}>
+          <Link
+            className={styles.signal}
+            href={`/proof/${VERIFIED_TESTNET_PROOF.id}`}
+          >
             <span aria-hidden="true" />
-            Safe to inspect; impossible to broadcast
-          </div>
+            Inspect the transaction proof
+          </Link>
         </aside>
       </section>
 

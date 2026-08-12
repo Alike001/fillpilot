@@ -1,0 +1,137 @@
+.shell {
+  width: min(980px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: clamp(72px, 12vw, 148px) 0;
+}
+
+.eyebrow,
+.event p {
+  margin: 0 0 18px;
+  color: var(--brand-dark);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.shell h1 {
+  max-width: 760px;
+  margin: 0;
+  font-size: clamp(48px, 7vw, 82px);
+  letter-spacing: -0.06em;
+  line-height: 0.98;
+}
+
+.lede,
+.boundary {
+  max-width: 680px;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+.status {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 24px;
+  align-items: baseline;
+  margin-top: 48px;
+  padding: 22px;
+  border: 1px solid var(--keyline);
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.status span {
+  color: var(--brand);
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+.status strong {
+  font-size: 24px;
+}
+.status p {
+  grid-column: 1 / -1;
+  margin: 5px 0 0;
+  color: rgb(255 255 255 / 68%);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  border: 1px solid var(--keyline);
+  border-top: 0;
+}
+.facts div {
+  min-height: 112px;
+  padding: 18px 22px;
+  border-right: 1px solid var(--keyline);
+  border-bottom: 1px solid var(--keyline);
+}
+.facts div:nth-child(2n) {
+  border-right: 0;
+}
+.facts dt {
+  color: var(--muted);
+  font-size: 13px;
+}
+.facts dd {
+  margin: 9px 0 0;
+  overflow-wrap: anywhere;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.facts a {
+  border-bottom: 1px solid var(--ink);
+}
+
+.event {
+  padding: 28px 22px;
+  border: 1px solid var(--keyline);
+  border-top: 0;
+}
+.event strong {
+  display: block;
+  overflow-wrap: anywhere;
+  font-family: var(--mono);
+  font-size: 13px;
+}
+.event span {
+  display: block;
+  margin-top: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.boundary {
+  margin-top: 36px;
+}
+.back {
+  display: inline-block;
+  margin-top: 24px;
+  border-bottom: 1px solid var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+@media (max-width: 620px) {
+  .shell {
+    width: min(100% - 28px, 980px);
+    padding: 58px 0 80px;
+  }
+  .facts {
+    grid-template-columns: 1fr;
+  }
+  .facts div,
+  .facts div:nth-child(2n) {
+    border-right: 0;
+  }
+  .status {
+    grid-template-columns: 1fr;
+  }
+}
