@@ -29,7 +29,9 @@ export async function GET(
     }
 
     const { executionId } = await context.params;
-    if (!/^direct_[a-zA-Z0-9_-]+$/.test(executionId)) {
+    // KeeperHub documents this as an opaque string. Direct executions may use
+    // IDs that do not carry a `direct_` prefix, so only reject unsafe path data.
+    if (!/^[a-zA-Z0-9_-]{8,128}$/.test(executionId)) {
       return NextResponse.json(
         { error: "Invalid KeeperHub execution ID." },
         { status: 400 },
