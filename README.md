@@ -1,6 +1,6 @@
 # FillPilot
 
-FillPilot is a deterministic execution agent for one Base-mainnet goal: sell USDC for WETH by a deadline, with at most one rule-bound replacement. KeeperHub is the only sender for judged onchain writes; CoW Protocol supplies the order and settlement path.
+FillPilot is designed as a deterministic execution agent for one Base-mainnet goal: sell USDC for WETH by a deadline, with at most one rule-bound replacement. KeeperHub is the only sender for judged onchain writes; CoW Protocol supplies the order and settlement path. The current hosted build keeps the economic write lifecycle disabled and exposes the policy, read and simulation boundaries, and one independently verified Base Sepolia execution proof.
 
 ## Verified KeeperHub execution
 
@@ -10,7 +10,7 @@ FillPilot has one independently verified Base Sepolia testnet execution through 
 - [Base Sepolia transaction receipt](https://sepolia.basescan.org/tx/0x843bdfd7be5b74bf3396792611c623f283eeec64d9f386e72448fe5da60520aa)
 - Result: succeeded, zero ETH value, `Flightcheck` event emitted by the reviewed contract
 
-This proof is intentionally narrow. It is a bounded call to an external public testnet canary, not a FillPilot-owned contract, CoW order, token approval, or financial fill. It proves the KeeperHub execution path without inventing a completed trading lifecycle. Run the app and open `/proof/base-sepolia-canary-20260812` to view the human-readable receipt record.
+This proof is intentionally narrow. It is a bounded Base Sepolia call to an external public testnet canary, not a FillPilot-owned contract, CoW order, token approval, or financial fill. It proves the KeeperHub execution path without inventing a completed trading lifecycle. Base mainnet is the intended production execution profile, but no mainnet write is enabled in the hosted build. Run the app and open `/proof/base-sepolia-canary-20260812` to view the human-readable receipt record.
 
 ## Local setup
 
@@ -40,6 +40,6 @@ pnpm test:fork
 pnpm test:coverage
 ```
 
-`pnpm verify` runs formatting, linting, strict types, local secret and file-size checks, unit/integration tests, migration consistency, both production builds, and responsive browser smoke tests. Database integration tests run when `TEST_DATABASE_URL` is set; CI always supplies it.
+`pnpm verify` runs formatting, linting, strict types, local secret and file-size checks, unit/integration tests, migration consistency, both production builds, and responsive browser smoke tests. Set `TEST_DATABASE_URL` before running the integration suite. The current hosted build leaves mainnet and testnet writes disabled.
 
 Mainnet writes are never part of automated tests. Any funded run requires an exact preflight and explicit human approval.
