@@ -80,6 +80,21 @@ describe("server environment", () => {
     ).not.toThrow();
   });
 
+  it("accepts an explicit false write flag and keeps it disabled", () => {
+    const env = parseServerEnv({ ENABLE_TESTNET_WRITES: "false" });
+
+    expect(env.ENABLE_TESTNET_WRITES).toBe(false);
+    expect(() =>
+      requireEthereumSepoliaTestnetWriteReady(
+        parseServerEnv({
+          EXECUTION_NETWORK: "ethereum-sepolia",
+          SEPOLIA_RPC_URL: "https://sepolia.example.test",
+          ENABLE_TESTNET_WRITES: "false",
+        }),
+      ),
+    ).toThrow("Testnet writes are disabled");
+  });
+
   it("requires a separate Sepolia network, RPC, and write flag", () => {
     const base = parseServerEnv({});
     expect(() => requireEthereumSepoliaReadReady(base)).toThrow(

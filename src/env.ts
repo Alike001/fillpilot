@@ -27,7 +27,7 @@ const optionalKeeperHubApiKey = z.preprocess(
 const writeEnablement = z
   .preprocess(
     (value) => (value === "" ? undefined : value),
-    z.literal("true").optional(),
+    z.enum(["true", "false"]).optional(),
   )
   .transform((value) => value === "true");
 
