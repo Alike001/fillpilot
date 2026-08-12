@@ -16,14 +16,24 @@ type Review = {
   boundary: string;
 };
 
+type ExecutionStatus = {
+  executionId: string;
+  status: string;
+  transactionHash?: string;
+  transactionLink?: string;
+  gasUsedWei?: string;
+  error?: unknown;
+};
+
 export function ExecutionCanaryReview() {
   const [review, setReview] = useState<Review>();
   const [message, setMessage] = useState(
     "No external canary call has been prepared.",
   );
   const [loading, setLoading] = useState<
-    "review" | "simulation" | "submission"
+    "review" | "simulation" | "submission" | "status"
   >();
+  const [executionId, setExecutionId] = useState<string>();
 
   async function loadReview() {
     setLoading("review");
@@ -98,6 +108,7 @@ export function ExecutionCanaryReview() {
         );
         return;
       }
+      setExecutionId(payload.submission.executionId);
       setMessage(
         `KeeperHub accepted execution ${payload.submission.executionId} with status ${payload.submission.status}${payload.submission.idempotentReplay ? " (idempotent replay)" : ""}. ${payload.boundary}`,
       );
@@ -105,6 +116,38 @@ export function ExecutionCanaryReview() {
       setMessage(
         "FillPilot could not reach the approved canary submission route.",
       );
+    } finally {
+      setLoading(undefined);
+    }
+  }
+
+  async function refreshStatus() {
+    if (!executionId) return;
+    setLoading("status");
+    try {
+      const response = await fetch(
+        `/api/testnet/execution-canary/status/${encodeURIComponent(executionId)}`,
+        { cache: "no-store" },
+      );
+      const payload = (await response.json()) as {
+        status?: ExecutionStatus;
+        error?: string;
+        boundary?: string;
+      };
+      if (!response.ok || !payload.status) {
+        setMessage(
+          payload.error ?? "KeeperHub execution status is unavailable.",
+        );
+        return;
+      }
+      const receipt = payload.status.transactionHash
+        ? ` Transaction hash: ${payload.status.transactionHash}.${payload.status.transactionLink ? ` Explorer: ${payload.status.transactionLink}` : ""}`
+        : " No transaction hash is available yet.";
+      setMessage(
+        `KeeperHub execution ${payload.status.executionId} is ${payload.status.status}.${receipt} ${payload.boundary ?? ""}`,
+      );
+    } catch {
+      setMessage("FillPilot could not reach the KeeperHub status route.");
     } finally {
       setLoading(undefined);
     }
@@ -131,6 +174,15 @@ export function ExecutionCanaryReview() {
           disabled={loading !== undefined}
         >
           {loading === "review" ? "Checking public code…" : "Review exact call"}
+        </button>
+        <button
+          type="button"
+          onClick={refreshStatus}
+          disabled={!executionId || loading !== undefined}
+        >
+          {loading === "status"
+            ? "Refreshing receipt…"
+            : "Refresh execution receipt"}
         </button>
         <button
           type="button"
