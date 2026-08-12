@@ -1,4 +1,5 @@
-import { keccak256, parseAbi } from "viem";
+import { createHash } from "node:crypto";
+import { encodeFunctionData, keccak256, parseAbi } from "viem";
 
 export const PUBLIC_BASE_SEPOLIA_EXECUTION_CANARY = {
   chainId: 84532,
@@ -28,6 +29,45 @@ export type PublicExecutionCanaryCheck =
       readonly status: "unavailable-external-canary";
       readonly reason: string;
     };
+
+export type PublicExecutionCanaryReview = Readonly<{
+  chainId: number;
+  contract: `0x${string}`;
+  function: "ping(bytes32)";
+  calldata: `0x${string}`;
+  challenge: `0x${string}`;
+  value: "0";
+  expectedEvent: "Flightcheck(address indexed sender, bytes32 indexed challenge, uint256 chainId)";
+  sourceRepository: string;
+  boundary: string;
+}>;
+
+/**
+ * Builds a stable, human-reviewable zero-value call. It prepares bytes only,
+ * does not hold a signing key, and does not contact KeeperHub or a chain.
+ */
+export function buildPublicExecutionCanaryReview(): PublicExecutionCanaryReview {
+  const challenge = `0x${createHash("sha256")
+    .update("fillpilot:public-base-sepolia-canary:v1")
+    .digest("hex")}` as `0x${string}`;
+  return {
+    chainId: PUBLIC_BASE_SEPOLIA_EXECUTION_CANARY.chainId,
+    contract: PUBLIC_BASE_SEPOLIA_EXECUTION_CANARY.contract,
+    function: "ping(bytes32)",
+    calldata: encodeFunctionData({
+      abi: PUBLIC_BASE_SEPOLIA_EXECUTION_CANARY.abi,
+      functionName: "ping",
+      args: [challenge],
+    }),
+    challenge,
+    value: "0",
+    expectedEvent:
+      "Flightcheck(address indexed sender, bytes32 indexed challenge, uint256 chainId)",
+    sourceRepository: PUBLIC_BASE_SEPOLIA_EXECUTION_CANARY.sourceRepository,
+    boundary:
+      "Review only. This prepares a zero-value public-canary ping. It cannot submit, approve tokens, place a CoW order, deploy a contract, or authorize a transaction.",
+  };
+}
 
 /**
  * Confirms that the public canary has the pinned runtime code before it is
